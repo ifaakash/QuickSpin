@@ -28,9 +28,7 @@ jobs:
       - name: Convert YAML -> TFVARS.JSON
         working-directory: python
         run: |
-          python yaml-to-json.py > terraform.tfvars.json
-          echo "Verify the converted file"
-          cat terraform.tfvars.json
+          python yaml-to-json.py | tee terraform.tfvars.json
           mv terraform.tfvars.json ../IaC/
 
       - name: Connect to Cloud Provider
@@ -49,9 +47,5 @@ jobs:
       - name: Terraform initialisation and plan
         working-directory: IaC
         run: |
-          echo "Listing files in IaC directory:"
-          ls
-          echo "Verify the converted file"
-          cat terraform.tfvars.json
           terraform init
-        # terraform plan -var-file=terraform.tfvars.json
+          terraform plan -var-file=terraform.tfvars.json
