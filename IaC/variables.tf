@@ -37,30 +37,30 @@ variable "is_public" {
 
 ##################### INSTANCE #####################
 
-# variable "user_ip" {
-#   description = "User's IP address"
-#   type        = string
-# }
+variable "user_ip" {
+  description = "User's IP address"
+  type        = string
+}
 
-# variable "instance_type" {
-#   description = "Instance type for EC2 instance"
-#   type        = string
-# }
+variable "instance_type" {
+  description = "Instance type for EC2 instance"
+  type        = string
+}
 
-# variable "ami_id" {
-#   description = "AMI ID for EC2 instance"
-#   type        = string
-# }
+variable "ami_id" {
+  description = "AMI ID for EC2 instance"
+  type        = string
+}
 
-# variable "network_interface_id" {
-#   description = "Network interface ID for EC2 instance"
-#   type        = string
-# }
+variable "network_interface_id" {
+  description = "Network interface ID for EC2 instance"
+  type        = string
+}
 
-# variable "security_group_ids" {
-#   description = "Security group IDs for EC2 instance"
-#   type        = list(string)
-# }
+variable "security_group_ids" {
+  description = "Security group IDs for EC2 instance"
+  type        = list(string)
+}
 
 ##################### DEFAULT TAGS #####################
 variable "default_tags" {
