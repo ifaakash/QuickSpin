@@ -28,8 +28,7 @@ jobs:
       - name: Convert YAML -> TFVARS.JSON
         working-directory: python
         run: |
-          python yaml-to-json.py > ../terraform.tfvars.json
-          cat ../terraform.tfvars.json
+          python yaml-to-json.py > ../IaC/terraform.tfvars.json
 
       - name: Connect to Cloud Provider
         uses: aws-actions/configure-aws-credentials@v5.0.0
