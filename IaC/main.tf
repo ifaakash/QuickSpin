@@ -10,12 +10,12 @@ module "networking" {
   default_tags         = var.default_tags
 }
 
-module "instance" {
-  source               = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
-  prefix               = var.prefix
-  ami_id               = var.ami_id
-  instance_type        = var.instance_type
-  network_interface_id = module.networking.network_interface_id
-  security_group_ids   = [module.networking.security_group_id]
-  default_tags         = var.default_tags
-}
+# module "ec2" {
+#   source               = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
+#   prefix               = var.prefix
+#   ami_id               = var.ami_id
+#   instance_type        = var.instance_type
+#   network_interface_id = module.networking.network_interface_id
+#   security_group_ids   = [module.networking.security_group_id]
+#   default_tags         = var.default_tags
+# }
