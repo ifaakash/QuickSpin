@@ -11,6 +11,5 @@ tfvars = {
 }
 
 # Write to terraform.tfvars.json
-
 with open('terraform.tfvars.json', 'w') as f:
     json.dump(tfvars, f, indent=4)

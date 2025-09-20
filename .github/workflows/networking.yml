@@ -26,3 +26,20 @@ jobs:
         run: |
           python yaml-to-json.py > terraform.tfvars.json
           cat terraform.tfvars.json
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Connect to Cloud Provider
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Validate connect to Cloud
+        run: |
+          aws sts get-caller-identity
+
+      # - name: Terraform Init
+      #   working-directory: IaC
+      #   run: terraform init
