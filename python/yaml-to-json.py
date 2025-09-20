@@ -9,7 +9,8 @@ with open('../quickspin.yml') as f:
 tfvars = {
     "user_ip": config["networking"]["user_ip"] + "/32",
     "is_public": config["networking"]["is_public"],
-    "ami_id" : config["instance"]["ami"]
+    "ami_id" : config["instance"]["ami"],
+    "instance_type": config["instance"]["instance_type"]
 }
 
 # Write to terraform.tfvars.json
