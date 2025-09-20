@@ -31,9 +31,6 @@ jobs:
           python yaml-to-json.py > terraform.tfvars.json
           cat terraform.tfvars.json
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
       - name: Connect to Cloud Provider
         uses: aws-actions/configure-aws-credentials@v5.0.0
         with:
@@ -44,6 +41,11 @@ jobs:
         run: |
           aws sts get-caller-identity
 
-      # - name: Terraform Init
-      #   working-directory: IaC
-      #   run: terraform init
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform initialisation and plan
+        working-directory: IaC
+        run: |
+          terraform init
+          terraform plan
