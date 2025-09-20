@@ -2,7 +2,7 @@ import yaml
 import json
 import sys
 
-with open('config.yaml') as f:
+with open('quickspin.yml') as f:
     config = yaml.safe_load(f)
 
 # Flatten yaml file
