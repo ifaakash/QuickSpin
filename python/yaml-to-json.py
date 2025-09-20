@@ -7,7 +7,9 @@ with open('../quickspin.yml') as f:
 
 # Flatten yaml file
 tfvars = {
-    "user_ip": config["networking"]["user_ip"] + "/32"
+    "user_ip": config["networking"]["user_ip"] + "/32",
+    "is_public": config["networking"]["is_public"],
+    "ami_id" : config["instance"]["ami"]
 }
 
 # Write to terraform.tfvars.json

@@ -1,2 +1,6 @@
 networking:
   user_ip: "49.36.144.148"
+  is_public: true # possible values are true or false
+instance:
+  ami: "ami-0360c520857e3138f"
+  instance_type: "t2.micro"

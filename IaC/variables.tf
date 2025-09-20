@@ -28,6 +28,11 @@ variable "enable_dns_support" {
   default     = true
 }
 
+variable "is_public" {
+  description = "Boolean indicating whether the instance is public or private"
+  type        = bool
+}
+
 variable "user_ip" {
   description = "User's IP address"
   type        = string
