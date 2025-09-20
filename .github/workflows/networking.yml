@@ -30,6 +30,8 @@ jobs:
         run: |
           python yaml-to-json.py > terraform.tfvars.json
           cat terraform.tfvars.json
+          ls
+          pwd
 
       - name: Connect to Cloud Provider
         uses: aws-actions/configure-aws-credentials@v5.0.0
@@ -48,4 +50,4 @@ jobs:
         working-directory: IaC
         run: |
           terraform init
-          terraform plan
+          terraform plan -var-file=terraform.tfvars.json
