@@ -10,12 +10,16 @@ module "network" {
   default_tags         = var.default_tags
 }
 
+output "network_interface_id" {
+  value = module.networking.network_interface_id
+}
+
 module "ec2" {
   source               = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
   prefix               = var.prefix
   ami_id               = var.ami_id
   instance_type        = var.instance_type
-  network_interface_id = module.networking.network_interface_id
+  network_interface_id = output.network_interface_id.value
   security_group_ids   = [module.networking.security_group_id]
   default_tags         = var.default_tags
 }
