@@ -1,0 +1,28 @@
+name: QuickSpin Networking
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install PyYAML
+        run: |
+          pip install pyyaml
+
+      - name: Convert YAML -> TFVARS.JSON
+        working-directory: python
+        run: |
+          python yaml-to-json.py > terraform.tfvars.json
+          cat terraform.tfvars.json
