@@ -1,25 +1,19 @@
-module "network" {
-  source               = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
-  prefix               = var.prefix
+module "ec2_stack" {
+  source = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
+  prefix = var.prefix
+
+  ##################### NETWORKING #####################
+
   vpc_cidr             = var.vpc_cidr
   subnet_cidr          = var.subnet_cidr
   enable_dns_hostnames = var.enable_dns_hostnames
   enable_dns_support   = var.enable_dns_support
   user_ip              = var.user_ip
   is_public            = var.is_public
-  default_tags         = var.default_tags
-}
 
-output "network_interface_id" {
-  value = module.networking.network_interface_id
-}
+  ##################### INSTANCE #####################
 
-module "ec2" {
-  source               = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
-  prefix               = var.prefix
-  ami_id               = var.ami_id
-  instance_type        = var.instance_type
-  network_interface_id = output.network_interface_id.value
-  security_group_ids   = [module.networking.security_group_id]
-  default_tags         = var.default_tags
+  ami_id        = var.ami_id
+  instance_type = var.instance_type
+  default_tags  = var.default_tags
 }
