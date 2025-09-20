@@ -49,4 +49,4 @@ jobs:
         working-directory: IaC
         run: |
           terraform init
-          terraform plan -var-file=terraform.tfvars.json
+          terraform plan

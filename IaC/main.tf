@@ -1,4 +1,4 @@
-module "networking" {
+module "network" {
   source               = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
   prefix               = var.prefix
   vpc_cidr             = var.vpc_cidr
