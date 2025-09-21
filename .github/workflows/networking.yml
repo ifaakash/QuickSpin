@@ -54,7 +54,6 @@ jobs:
             echo "Bucket $BUCKET_NAME does not exist, creating..."
             aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
           fi
-          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
 
       - name: Validate connect to Cloud
         run: |
