@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  AWS_REGION: us-east-1
+  BUCKET_NAME: "quickspin-${{ github.repository_owner }}-backend"
+
 permissions:
   id-token: write
   contents: write
@@ -35,8 +39,19 @@ jobs:
       - name: Connect to Cloud Provider
         uses: aws-actions/configure-aws-credentials@v5.0.0
         with:
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Create remote backend bucket if not exists
+        working-directory: IaC
+        run: |
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Bucket $BUCKET_NAME already exists, skipping creation."
+          else
+            echo "Bucket $BUCKET_NAME does not exist, creating..."
+            aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
+          fi
+          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
 
       - name: Validate connect to Cloud
         run: |
@@ -48,5 +63,5 @@ jobs:
       - name: Terraform initialisation and plan
         working-directory: IaC
         run: |
-          terraform init
+          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan
