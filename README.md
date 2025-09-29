@@ -2,6 +2,7 @@
 
 ### GITBOOK DOCS
 - NAT with EIP [https://aakashs-organization-3.gitbook.io/devops-doks/group-2/aws/nat-with-eip]
+- How does SSM works in AWS [https://aakashs-organization-3.gitbook.io/devops-doks/group-2/aws/how-does-ssm-works-in-aws]
 
 ### PLAN
 - [x] Private Instance will need an IAM role granting Session Manager role to it
