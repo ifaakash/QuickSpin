@@ -1,5 +1,8 @@
 ## How to deploy the VM?
 
+### GITBOOK DOCS
+- NAT with EIP [https://aakashs-organization-3.gitbook.io/devops-doks/group-2/aws/nat-with-eip]
+
 ### PLAN
 - [x] Private Instance will need an IAM role granting Session Manager role to it
 - [x] Allow connection to public Instance with Session Manager only, for better security
