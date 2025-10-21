@@ -37,10 +37,10 @@ variable "enable_dns_support" {
   default     = true
 }
 
-variable "is_public" {
-  description = "Boolean indicating whether the instance is public or private"
-  type        = bool
-}
+# variable "is_public" {
+#   description = "Boolean indicating whether the instance is public or private"
+#   type        = bool
+# }
 
 ##################### INSTANCE #####################
 
