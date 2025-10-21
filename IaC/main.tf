@@ -23,7 +23,7 @@ module "ec2_stack" {
   ami_id               = each.value.ami
   is_public            = each.value.is_public
   instance_type        = each.value.instance_type
-  network_interface_id = each.value.is_public ? module.networking.public_network_interface_id ? module.networking.private_network_interface_id
+  network_interface_id = each.value.is_public ? module.networking.public_network_interface_id : module.networking.private_network_interface_id
   security_group_ids   = [module.networking.security_group_id]
   default_tags         = var.default_tags
   depends_on           = [module.networking]
