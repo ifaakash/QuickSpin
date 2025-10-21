@@ -18,6 +18,13 @@ variable "subnet_cidr" {
   default     = "10.0.0.0/22"
 }
 
+# Deploy a private subnet
+variable "private_subnet_cidr" {
+  description = "CIDR block for Public subnet"
+  type        = string
+  default     = "10.0.0.128/22"
+}
+
 variable "enable_dns_hostnames" {
   description = "Enable DNS hostnames for the VPC"
   type        = bool
@@ -37,20 +44,29 @@ variable "is_public" {
 
 ##################### INSTANCE #####################
 
-variable "user_ip" {
-  description = "User's IP address"
-  type        = string
+variable "instances" {
+  description = "List of Instances to be created"
+  type = list(object({
+    ami_id        = string
+    instance_type = string
+    is_public     = bool
+  }))
 }
 
-variable "instance_type" {
-  description = "Instance type for EC2 instance"
-  type        = string
-}
+# variable "user_ip" {
+#   description = "User's IP address"
+#   type        = string
+# }
 
-variable "ami_id" {
-  description = "AMI ID for EC2 instance"
-  type        = string
-}
+# variable "instance_type" {
+#   description = "Instance type for EC2 instance"
+#   type        = string
+# }
+
+# variable "ami_id" {
+#   description = "AMI ID for EC2 instance"
+#   type        = string
+# }
 
 # variable "network_interface_id" {
 #   description = "Network interface ID for EC2 instance"
@@ -68,6 +84,6 @@ variable "default_tags" {
   type        = map(string)
   default = {
     "Project"    = "QuickSpin"
-    "Created_by" = "ifaakash"
+    "Created_by" = "ifaakash" # pick github username
   }
 }

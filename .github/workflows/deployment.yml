@@ -55,9 +55,9 @@ jobs:
             aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
           fi
 
-      - name: Validate connect to Cloud
-        run: |
-          aws sts get-caller-identity
+      # - name: Validate connect to Cloud
+      #   run: |
+      #     aws sts get-caller-identity
 
       - name: Terraform initialisation and plan
         working-directory: IaC
