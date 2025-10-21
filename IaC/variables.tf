@@ -53,10 +53,10 @@ variable "instances" {
   }))
 }
 
-# variable "user_ip" {
-#   description = "User's IP address"
-#   type        = string
-# }
+variable "user_ip" {
+  description = "User's IP address"
+  type        = string
+}
 
 # variable "instance_type" {
 #   description = "Instance type for EC2 instance"
