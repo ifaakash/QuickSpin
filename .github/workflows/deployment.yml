@@ -64,4 +64,4 @@ jobs:
         run: |
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
-          terraform apply tfplan --auto-approve
+          terraform apply --auto-approve tfplan
