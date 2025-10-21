@@ -12,7 +12,7 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "subnet_cidr" {
+variable "public_subnet_cidr" {
   description = "CIDR block for Public subnet"
   type        = string
   default     = "10.0.0.0/22"
@@ -37,10 +37,10 @@ variable "enable_dns_support" {
   default     = true
 }
 
-# variable "is_public" {
-#   description = "Boolean indicating whether the instance is public or private"
-#   type        = bool
-# }
+variable "is_public" {
+  description = "Boolean indicating whether the instance is public or private"
+  type        = bool
+}
 
 ##################### INSTANCE #####################
 
@@ -58,25 +58,15 @@ variable "user_ip" {
   type        = string
 }
 
-# variable "instance_type" {
-#   description = "Instance type for EC2 instance"
-#   type        = string
-# }
+variable "network_interface_id" {
+  description = "Network interface ID for EC2 instance"
+  type        = string
+}
 
-# variable "ami_id" {
-#   description = "AMI ID for EC2 instance"
-#   type        = string
-# }
-
-# variable "network_interface_id" {
-#   description = "Network interface ID for EC2 instance"
-#   type        = string
-# }
-
-# variable "security_group_ids" {
-#   description = "Security group IDs for EC2 instance"
-#   type        = list(string)
-# }
+variable "security_group_ids" {
+  description = "Security group IDs for EC2 instance"
+  type        = list(string)
+}
 
 ##################### DEFAULT TAGS #####################
 variable "default_tags" {
