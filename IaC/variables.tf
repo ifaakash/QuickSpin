@@ -22,7 +22,7 @@ variable "public_subnet_cidr" {
 variable "private_subnet_cidr" {
   description = "CIDR block for Public subnet"
   type        = string
-  default     = "10.0.0.128/22"
+  default     = "10.0.4.0/22"
 }
 
 variable "enable_dns_hostnames" {
