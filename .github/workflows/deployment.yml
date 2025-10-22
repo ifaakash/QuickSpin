@@ -62,6 +62,6 @@ jobs:
         working-directory: IaC
         run: |
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-          terraform destroy --auto-approve
-        # terraform plan -out=tfplan
-        # terraform apply --auto-approve tfplan
+          terraform plan -out=tfplan
+          terraform apply --auto-approve tfplan
+          # terraform destroy --auto-approve
