@@ -14,7 +14,10 @@ module "networking" {
 }
 
 module "iam" {
-  source                = "git::https://github.com/ifaakash/Terraform//IAM?ref=main"
+  source = "git::https://github.com/ifaakash/Terraform//IAM?ref=main"
+
+  ##################### IAM #####################
+
   role_name             = "${var.prefix}-${var.role_name}"
   instance_profile_name = "${var.prefix}-${var.instance_profile_name}"
 }
