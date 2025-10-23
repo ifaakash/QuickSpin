@@ -10,9 +10,9 @@ instances:
     instance_type: "t2.micro"
     is_public: true
 
-  - ami: "ami-0360c520857e3138f"
-    instance_type: "t2.small"
-    is_public: true
+  # - ami: "ami-0360c520857e3138f"
+  #   instance_type: "t2.small"
+  #   is_public: true
 
   - ami: "ami-0360c520857e3138f"
     instance_type: "t2.micro"
