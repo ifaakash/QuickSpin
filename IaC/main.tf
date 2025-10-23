@@ -20,12 +20,14 @@ module "ec2_stack" {
 
   ##################### INSTANCE #####################
 
-  ami_id               = each.value.ami_id
-  instance_type        = each.value.instance_type
-  network_interface_id = each.value.is_public ? module.networking.public_network_interface_id : module.networking.private_network_interface_id
-  security_group_ids   = [module.networking.security_group_id]
-  default_tags         = var.default_tags
-  depends_on           = [module.networking]
+  ami_id                = each.value.ami_id
+  instance_type         = each.value.instance_type
+  network_interface_id  = each.value.is_public ? module.networking.public_network_interface_id : module.networking.private_network_interface_id
+  security_group_ids    = [module.networking.security_group_id]
+  role_name             = var.role_name
+  instance_profile_name = var.instance_profile_name
+  default_tags          = var.default_tags
+  depends_on            = [module.networking]
 }
 
 /*
