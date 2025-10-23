@@ -13,6 +13,12 @@ module "networking" {
   default_tags         = var.default_tags
 }
 
+module "iam" {
+  source                = "git::https://github.com/ifaakash/Terraform//IAM?ref=main"
+  role_name             = "${var.prefix}-${var.role_name}"
+  instance_profile_name = "${var.prefix}-${var.instance_profile_name}"
+}
+
 module "ec2_stack" {
   source   = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
   for_each = { for index, inst in var.instances : index => inst }
@@ -24,10 +30,9 @@ module "ec2_stack" {
   instance_type         = each.value.instance_type
   network_interface_id  = each.value.is_public ? module.networking.public_network_interface_id : module.networking.private_network_interface_id
   security_group_ids    = [module.networking.security_group_id]
-  role_name             = "${var.prefix}-${var.role_name}"
-  instance_profile_name = "${var.prefix}-${var.instance_profile_name}"
+  instance_profile_name = module.iam.instance_profile_name
   default_tags          = var.default_tags
-  depends_on            = [module.networking]
+  depends_on            = [module.networking, module.iam]
 }
 
 /*
