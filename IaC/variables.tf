@@ -48,7 +48,7 @@ variable "role_name" {
 variable "instance_profile_name" {
   description = "Name of IAM Instance profile to be attachecd with the EC2 instance"
   type        = string
-  default     = "instance-profile"
+  default     = "instance-profiles"
 }
 
 ##################### INSTANCE #####################
