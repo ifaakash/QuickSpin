@@ -59,15 +59,15 @@ jobs:
       #   run: |
       #     aws sts get-caller-identity
 
-      - name: Terraform initialisation and plan
-        working-directory: IaC
-        run: |
-          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-          terraform plan -out=tfplan
-          terraform apply --auto-approve tfplan
-
-      # - name: Destroy Infra
+      # - name: Terraform initialisation and plan
       #   working-directory: IaC
       #   run: |
       #     terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-      #     terraform destroy --auto-approve
+      #     terraform plan -out=tfplan
+      #     terraform apply --auto-approve tfplan
+
+      - name: Destroy Infra
+        working-directory: IaC
+        run: |
+          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
+          terraform destroy --auto-approve
