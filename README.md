@@ -1,20 +1,20 @@
 ## How to deploy the VM?
 
 ### PLAN
-- [ ] Private Instance will need an IAM role granting Session Manager role to it
+- [x] Private Instance will need an IAM role granting Session Manager role to it
 - [ ] Allow connection to public Instance with Session Manager only, for better security
-- [ ] How to deploy 'N' public and 'N' private instance
+- [x] How to deploy 'N' public and 'N' private instance
   - If the instances field is a list of instance, then we can
 
 ### TASKS
 - [x] Create an IAM role for System Manager Session Manager
 - [ ] For private instace, create VPC endpoints
-- [ ] Security group for public instnace allowing outbount to Session Manager ( over HTTPS )
-- [ ] Allow inbound from user IP for public instance, and outbound to 0.0.0.0:443 ( for SSM )
+- [x] Security group for public instance allowing outbount to Session Manager ( over HTTPS )
+- [x] Allow inbound from user IP for public instance, and outbound to 0.0.0.0:443 ( for SSM )
 
 - [ ] (HIGH PRIORITY) Create a common key-pair, and attach that to all instances created
 - [ ] (HIGH PRIORITY) One ENI can be attached to single instance, find a way to attach multiple ENI to single instance
-- [ ] (HIGH PRIORITY) Route table attachment to the Subnet of the Instance
+- [x] (HIGH PRIORITY) Route table attachment to the Subnet of the Instance
 - [ ] (HIGH PRIORITY) Increase size of public Instance and check connectivity using System
 - [ ] (HIGH PRIORITY) Check if the public Instance gets a public IP when connected to Public Subnet, without EIP
 
