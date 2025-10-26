@@ -17,11 +17,13 @@
 - [x] (HIGH PRIORITY) Increase size of public Instance and check connectivity using System
 - [x] (HIGH PRIORITY) Check if the public Instance gets a public IP when connected to Public Subnet, without EIP
 - [x] (HIGH PRIORITY) Check if apache is accessible from the Instance public IP, that is accessible via Public IP ( without EIP )
+- [x] (HIGH PRIORITY) The Private subnet, need to have NAT Gateway attached to it, what if we deploy multiple private subnet?
 
 ### TESTED
 - The Instance deployed, have a name to denote if they are public or private
 - The public Instance, attached to IGW, is able to connect with Internet ( verified via ping 8.8.8.8 )
 - The public Instance, attached to IGW, is having SSM agent running, and the only way to connect with it, is via Session Manager
+- The private Instance, is able to ping the internet, once the NAT Gateway is deployed in the public subnet
 
 ```
 instances:
