@@ -2,21 +2,26 @@
 
 ### PLAN
 - [x] Private Instance will need an IAM role granting Session Manager role to it
-- [ ] Allow connection to public Instance with Session Manager only, for better security
+- [x] Allow connection to public Instance with Session Manager only, for better security
 - [x] How to deploy 'N' public and 'N' private instance
-  - If the instances field is a list of instance, then we can
 
 ### TASKS
 - [x] Create an IAM role for System Manager Session Manager
-- [ ] For private instace, create VPC endpoints
+- [x] For private instace, create VPC endpoints
 - [x] Security group for public instance allowing outbount to Session Manager ( over HTTPS )
 - [x] Allow inbound from user IP for public instance, and outbound to 0.0.0.0:443 ( for SSM )
 
-- [ ] (HIGH PRIORITY) Create a common key-pair, and attach that to all instances created
 - [ ] (HIGH PRIORITY) One ENI can be attached to single instance, find a way to attach multiple ENI to single instance
+- [ ] (HIGH PRIORITY) Create a common key-pair, and attach that to all instances created
 - [x] (HIGH PRIORITY) Route table attachment to the Subnet of the Instance
-- [ ] (HIGH PRIORITY) Increase size of public Instance and check connectivity using System
-- [ ] (HIGH PRIORITY) Check if the public Instance gets a public IP when connected to Public Subnet, without EIP
+- [x] (HIGH PRIORITY) Increase size of public Instance and check connectivity using System
+- [x] (HIGH PRIORITY) Check if the public Instance gets a public IP when connected to Public Subnet, without EIP
+- [x] (HIGH PRIORITY) Check if apache is accessible from the Instance public IP, that is accessible via Public IP ( without EIP )
+
+### TESTED
+- The Instance deployed, have a name to denote if they are public or private
+- The public Instance, attached to IGW, is able to connect with Internet ( verified via ping 8.8.8.8 )
+- The public Instance, attached to IGW, is having SSM agent running, and the only way to connect with it, is via Session Manager
 
 ```
 instances:
