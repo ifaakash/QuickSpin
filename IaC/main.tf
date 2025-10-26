@@ -34,8 +34,8 @@ module "ec2_stack" {
   network_interface_id  = each.value.is_public ? module.networking.public_network_interface_id : module.networking.private_network_interface_id
   security_group_ids    = [module.networking.security_group_id]
   instance_profile_name = module.iam.instance_profile_name
-  default_tags          = var.default_tags
   depends_on            = [module.networking, module.iam]
+  default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance" }, var.default_tags)
 }
 
 /*
