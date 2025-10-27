@@ -14,8 +14,8 @@
 - [x] Security group for public instance allowing outbount to Session Manager ( over HTTPS )
 - [x] Allow inbound from user IP for public instance, and outbound to 0.0.0.0:443 ( for SSM )
 
-- [ ] (HIGH PRIORITY) One ENI can be attached to single instance, find a way to attach multiple ENI to single instance
-- [ ] (HIGH PRIORITY) Create a common key-pair, and attach that to all instances created
+- [x] (HIGH PRIORITY) One ENI can be attached to single instance, find a way to attach multiple ENI to single instance
+- [ ] (HIGH PRIORITY) Create a common key-pair, and attach that to all instances created --> ON HOLD (SSM IS IMPLEMENTED)
 - [x] (HIGH PRIORITY) Route table attachment to the Subnet of the Instance
 - [x] (HIGH PRIORITY) Increase size of public Instance and check connectivity using System
 - [x] (HIGH PRIORITY) Check if the public Instance gets a public IP when connected to Public Subnet, without EIP
