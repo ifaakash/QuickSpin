@@ -6,6 +6,7 @@
 - [x] How to deploy 'N' public and 'N' private instance
 - [] Verfiy if the private Instance is able to download the dependencies
 - [] Test Configuration with three Instances
+- [] Does the EIP gets removed when instance is removed?
 
 ### TASKS
 - [x] Create an IAM role for System Manager Session Manager
