@@ -4,6 +4,8 @@
 - [x] Private Instance will need an IAM role granting Session Manager role to it
 - [x] Allow connection to public Instance with Session Manager only, for better security
 - [x] How to deploy 'N' public and 'N' private instance
+- [] Verfiy if the private Instance is able to download the dependencies
+<!--- [] Test Configuration with three Instances-->
 
 ### TASKS
 - [x] Create an IAM role for System Manager Session Manager
