@@ -22,6 +22,20 @@ module "iam" {
   instance_profile_name = "${var.prefix}-${var.instance_profile_name}"
 }
 
+module "nic" {
+  source = "git::https://github.com/ifaakash/Terraform//Networking//NIC?ref=main"
+  prefix = var.prefix
+
+  ##################### ENI #####################
+
+  for_each     = { for index, inst in var.instances : index => inst }
+  description  = each.value.is_public ? "Elastic Network Interface for Public Instance" : "Elastic Network Interface for Private Instance"
+  subnet_id    = each.value.is_public ? module.networking.public_subnet_id : module.networking.private_subnet_id
+  sg_id        = module.networking.security_group_id
+  depends_on   = [module.networking]
+  default_tags = each.value.is_public ? merge({ "Name" = "${var.prefix}-public-eni-${each.key}" }, var.default_tags) : merge({ "Name" = "${var.prefix}-private-eni-${each.key}" }, var.default_tags)
+}
+
 module "ec2_stack" {
   source   = "git::https://github.com/ifaakash/Terraform//EC2?ref=main"
   for_each = { for index, inst in var.instances : index => inst }
@@ -31,10 +45,10 @@ module "ec2_stack" {
 
   ami_id                = each.value.ami_id
   instance_type         = each.value.instance_type
-  network_interface_id  = each.value.is_public ? module.networking.public_network_interface_id : module.networking.private_network_interface_id
+  network_interface_id  = module.nic[each.key].id
   security_group_ids    = [module.networking.security_group_id]
   instance_profile_name = module.iam.instance_profile_name
-  depends_on            = [module.networking, module.iam]
+  depends_on            = [module.networking, module.iam, module.nic]
   default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance" }, var.default_tags)
 }
 
