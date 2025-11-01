@@ -18,6 +18,6 @@ instances:
     instance_type: "t2.micro"
     is_public: false
 
-  # - ami: "ami-0360c520857e3138f"
-  #   instance_type: "t2.micro"
-  #   is_public: false
+  - ami: "ami-0360c520857e3138f"
+    instance_type: "t2.micro"
+    is_public: false
