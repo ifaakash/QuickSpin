@@ -49,7 +49,7 @@ module "ec2_stack" {
   security_group_ids    = [module.networking.security_group_id]
   instance_profile_name = module.iam.instance_profile_name
   depends_on            = [module.networking, module.iam, module.eni]
-  default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance" }, var.default_tags)
+  default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance-${each.key}" }, var.default_tags)
 }
 
 /*
