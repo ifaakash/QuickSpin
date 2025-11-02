@@ -24,6 +24,10 @@ module "iam" {
   ##################### KEY PAIR #####################
 
   kp_name = "${var.prefix}-key-pair"
+
+  ##################### SSM PARAMETER STORE #####################
+
+  kp_ssm_parameter_name = "/ssh/${var.prefix}-kp-ssm-parameter"
 }
 
 module "eni" {
