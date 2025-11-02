@@ -55,10 +55,6 @@ jobs:
             aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
           fi
 
-      # - name: Validate connect to Cloud
-      #   run: |
-      #     aws sts get-caller-identity
-
       # - name: Terraform initialisation and plan
       #   working-directory: IaC
       #   run: |
@@ -66,8 +62,12 @@ jobs:
       #     terraform plan -out=tfplan
       #     terraform apply --auto-approve tfplan
 
-      - name: Destroy Infra
-        working-directory: IaC
+      - name: Validate connection to Cloud
         run: |
-          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-          terraform destroy --auto-approve
+          aws sts get-caller-identity
+
+      # - name: Destroy Infra
+      #   working-directory: IaC
+      #   run: |
+      #     terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
+      #     terraform destroy --auto-approve

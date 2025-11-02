@@ -14,12 +14,16 @@ module "networking" {
 }
 
 module "iam" {
-  source = "git::https://github.com/ifaakash/Terraform//IAM?ref=main"
+  source = "git::https://github.com/ifaakash/Terraform//IAM?ref=feat/key-pair"
 
   ##################### IAM #####################
 
   role_name             = "${var.prefix}-${var.role_name}"
   instance_profile_name = "${var.prefix}-${var.instance_profile_name}"
+
+  ##################### KEY PAIR #####################
+
+  kp_name = "${var.prefix}-key-pair"
 }
 
 module "eni" {
