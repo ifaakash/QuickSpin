@@ -65,6 +65,8 @@ jobs:
       # - name: Fetch the value of key from the Parameter Store
       #   run: |
       #     aws sts get-caller-identity
+      #     Generate the PEM file for logging to the instance
+      #     aws ssm get get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
 
       - name: Destroy Infra
         working-directory: IaC
