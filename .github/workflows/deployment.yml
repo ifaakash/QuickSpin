@@ -96,8 +96,9 @@ jobs:
 
       - name: Run Ansible Inventory file
         working-directory: Ansible
+        # possible flags are --graph, --list and --host
         run: |
-          ansible-inventory -i inventory.yml
+          ansible-inventory -i inventory.yml --graph
 
       - name: List out the current folders
         run: |
