@@ -105,7 +105,7 @@ jobs:
         working-directory: Ansible
         # possible flags are --graph, --list and --host
         run: |
-          ansible-inventory -i inventory.yaml --list
+          ansible-inventory -i inventory.yaml --list --enable-plugin amazon.aws.aws_ec2 -vvv
 
       - name: List out the current folders
         run: |
