@@ -99,7 +99,7 @@ jobs:
       - name: Checking Ansible Installation
         run: |
           ansible --version
-          cd /opt/pipx/venvs/ansible-core/bin/python
+          ls -l /opt/pipx/venvs/ansible-core/bin/
           /opt/pipx/venvs/ansible-core/bin/python -m pip install boto3 botocore
 
       - name: Run Ansible Inventory file
