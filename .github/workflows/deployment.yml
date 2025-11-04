@@ -93,7 +93,7 @@ jobs:
 
       - name: List out the current folders
         run: |
-          echo "Repository structure" & ls
+          echo "Repository structure" && ls
 
       # - name: Run Ansible Inventory file
       #   working-directory: Ansible
