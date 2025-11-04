@@ -73,3 +73,25 @@ jobs:
         run: |
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform destroy --auto-approve
+
+  ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect to Cloud Provider
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Checking Ansible Installation
+        run: ansible --version
+
+      - name: Run Ansible Inventory file
+        working-directory: Ansible
+        run: |
+          ansible-inventory -i inventory.yml

@@ -6,14 +6,14 @@ instances:
   # instance_type: "" # possible values are t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge
   # is_public    : "" # possible values are true or false
 
-  - ami: "ami-0360c520857e3138f"
-    instance_type: "t2.small"
-    is_public: true
+  # - ami: "ami-0360c520857e3138f"
+  #   instance_type: "t2.small"
+  #   is_public: true
 
   - ami: "ami-0360c520857e3138f"
     instance_type: "t2.micro"
     is_public: false
 
-  - ami: "ami-0360c520857e3138f"
-    instance_type: "t2.micro"
-    is_public: false
+  # - ami: "ami-0360c520857e3138f"
+  #   instance_type: "t2.micro"
+  #   is_public: false
