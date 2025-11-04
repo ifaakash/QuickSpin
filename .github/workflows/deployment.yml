@@ -94,8 +94,8 @@ jobs:
 
       - name: Set Ansible config path
         run: |
-          ls -l $GITHUB_WORKSPACE/QuickSpin/Ansible/
-          echo "ANSIBLE_CONFIG=$GITHUB_WORKSPACE/QuickSpin/Ansible/ansible.cfg" >> $GITHUB_ENV
+          ls -l $GITHUB_WORKSPACE/Ansible
+          echo "ANSIBLE_CONFIG=$GITHUB_WORKSPACE/Ansible/ansible.cfg" >> $GITHUB_ENV
 
       - name: Checking Ansible Installation
         run: ansible --version
