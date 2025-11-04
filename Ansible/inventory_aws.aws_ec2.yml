@@ -9,7 +9,7 @@ filters:
   "tag:Project": QuickSpin
 
 hostnames:
-  - instance-id
+  - tag:Name
 
 compose:
   ansible_connection: community.aws.aws_ssm
