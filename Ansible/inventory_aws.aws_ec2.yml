@@ -4,8 +4,6 @@ plugin: amazon.aws.aws_ec2
 regions:
   - us-east-1
 
-ansible_python_interpreter: /usr/bin/python3
-
 filters:
   instance-state-name: running
   "tag:Project": QuickSpin
@@ -16,3 +14,4 @@ hostnames:
 compose:
   ansible_connection: aws_ssm
   ansible_host: instance_id
+  ansible_python_interpreter: /usr/bin/python3
