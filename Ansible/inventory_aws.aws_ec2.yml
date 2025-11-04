@@ -12,6 +12,6 @@ hostnames:
   - instance-id
 
 compose:
-  ansible_connection: aws_ssm
+  ansible_connection: community.aws.aws_ssm
   ansible_host: instance_id
   ansible_python_interpreter: /usr/bin/python3
