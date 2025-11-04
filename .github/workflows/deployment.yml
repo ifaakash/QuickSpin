@@ -75,6 +75,7 @@ jobs:
       #     terraform destroy --auto-approve
 
   ansible:
+    needs: [deploy]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
