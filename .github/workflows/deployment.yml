@@ -15,64 +15,64 @@ permissions:
   contents: write
 
 jobs:
-  # deploy:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v5
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-  #     - name: Install python
-  #       uses: actions/setup-python@v6
-  #       with:
-  #         python-version: "3.13"
+      - name: Install python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
 
-  #     - name: Install PyYAML
-  #       run: |
-  #         pip install pyyaml
+      - name: Install PyYAML
+        run: |
+          pip install pyyaml
 
-  #     - name: Convert YAML -> TFVARS.JSON
-  #       working-directory: python
-  #       run: |
-  #         python yaml-to-json.py | tee terraform.tfvars.json
-  #         mv terraform.tfvars.json ../IaC/
+      - name: Convert YAML -> TFVARS.JSON
+        working-directory: python
+        run: |
+          python yaml-to-json.py | tee terraform.tfvars.json
+          mv terraform.tfvars.json ../IaC/
 
-  #     - name: Connect to Cloud Provider
-  #       uses: aws-actions/configure-aws-credentials@v5.0.0
-  #       with:
-  #         aws-region: ${{ env.AWS_REGION }}
-  #         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      - name: Connect to Cloud Provider
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
 
-  #     - name: Setup Terraform
-  #       uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-  #     - name: Create remote backend bucket if not exists
-  #       working-directory: IaC
-  #       run: |
-  #         if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-  #           echo "Bucket $BUCKET_NAME already exists, skipping creation."
-  #         else
-  #           echo "Bucket $BUCKET_NAME does not exist, creating..."
-  #           aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
-  #         fi
+      - name: Create remote backend bucket if not exists
+        working-directory: IaC
+        run: |
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Bucket $BUCKET_NAME already exists, skipping creation."
+          else
+            echo "Bucket $BUCKET_NAME does not exist, creating..."
+            aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
+          fi
 
-  #     # - name: Terraform Infra Deployment
-  #     #   working-directory: IaC
-  #     #   run: |
-  #     #     terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-  #     #     terraform plan -out=tfplan
-  #     #     terraform apply --auto-approve tfplan
+      - name: Terraform Infra Deployment
+        working-directory: IaC
+        run: |
+          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
+          terraform plan -out=tfplan
+          terraform apply --auto-approve tfplan
 
-  #     # - name: Fetch the value of key from the Parameter Store
-  #     #   run: |
-  #     #     aws sts get-caller-identity
-  #     #     Generate the PEM file for logging to the instance
-  #     #     aws ssm get get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
+      # - name: Fetch the value of key from the Parameter Store
+      #   run: |
+      #     aws sts get-caller-identity
+      #     Generate the PEM file for logging to the instance
+      #     aws ssm get get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
 
-  #     - name: Destroy Infra
-  #       working-directory: IaC
-  #       run: |
-  #         terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-  #         terraform destroy --auto-approve
+      # - name: Destroy Infra
+      #   working-directory: IaC
+      #   run: |
+      #     terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
+      #     terraform destroy --auto-approve
 
   ansible:
     runs-on: ubuntu-latest
