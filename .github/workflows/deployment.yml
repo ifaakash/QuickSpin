@@ -91,7 +91,11 @@ jobs:
       - name: Checking Ansible Installation
         run: ansible --version
 
-      - name: Run Ansible Inventory file
-        working-directory: Ansible
+      - name: List out the current folders
         run: |
-          ansible-inventory -i inventory.yml
+          echo "Repository structure" & ls
+
+      # - name: Run Ansible Inventory file
+      #   working-directory: Ansible
+      #   run: |
+      #     ansible-inventory -i inventory.yml
