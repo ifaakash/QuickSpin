@@ -1,0 +1,13 @@
+---
+- name: Test connection to SSM managed instances
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Run a simple command to verify connection and SSM Agent user
+      ansible.builtin.command: whoami
+      register: user_result
+
+    - name: Print the user the command ran as (usually ssm-user or root)
+      ansible.builtin.debug:
+        msg: "Connected to {{ inventory_hostname }} as user: {{ user_result.stdout }}"

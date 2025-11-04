@@ -108,6 +108,7 @@ jobs:
         # possible flags are --graph, --list and --host
         run: |
           ansible-inventory -i inventory_aws.aws_ec2.yml --list
+          ansible-playbook -i inventory_aws.aws_ec2.yml ssm-playbook.yml
 
       - name: List out the current folders
         run: |
