@@ -88,10 +88,8 @@ jobs:
 
       - name: Install Ansible
         run: |
-          sudo apt-get update -qq > /dev/null 2>&1
-          sudo apt-get install -y ansible -qq
-          ansible-galaxy collection install amazon.aws
-          /opt/pipx/venvs/ansible-core/bin/pip install boto3 botocore
+          sudo apt-get update -qq && sudo apt-get install -y ansible -qq > /dev/null 2>&1
+          ansible-galaxy collection install amazon.aws > /dev/null 2>&1
 
       - name: Set Ansible config path
         run: |
