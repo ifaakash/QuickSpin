@@ -97,7 +97,10 @@ jobs:
           echo "ANSIBLE_CONFIG=$GITHUB_WORKSPACE/Ansible/ansible.cfg" >> $GITHUB_ENV
 
       - name: Checking Ansible Installation
-        run: ansible --version
+        run: |
+          ansible --version
+          cd /opt/pipx/venvs/ansible-core/bin/python
+          /opt/pipx/venvs/ansible-core/bin/python -m pip install boto3 botocore
 
       - name: Run Ansible Inventory file
         working-directory: Ansible
