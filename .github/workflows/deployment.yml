@@ -93,7 +93,9 @@ jobs:
           ansible-galaxy collection install amazon.aws
 
       - name: Set Ansible config path
-        run: echo "ANSIBLE_CONFIG=$GITHUB_WORKSPACE/QuickSpin/Ansible/ansible.cfg" >> $GITHUB_ENV
+        run: |
+          ls -l $GITHUB_WORKSPACE/QuickSpin/Ansible/
+          echo "ANSIBLE_CONFIG=$GITHUB_WORKSPACE/QuickSpin/Ansible/ansible.cfg" >> $GITHUB_ENV
 
       - name: Checking Ansible Installation
         run: ansible --version
