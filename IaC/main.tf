@@ -53,13 +53,20 @@ module "ec2_stack" {
   default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance-${each.key}" }, var.default_tags)
 }
 
+module "bastion_eni" {
+  source       = "git::https://github.com/ifaakash/Terraform//Bastion?ref=main"
+  prefix       = var.prefix
+  description  = "Elastic Network Interface for Bastion Instance"
+  subnet_id    = var.public_subnet_cidr
+  sg_id        = [module.networking.security_group_id]
+  default_tags = merge({ "Name" = "${var.prefix}-bastion-eni" }, var.default_tags)
+}
 
 # Bastion instance will go in public subnet
 module "bastion" {
-  source                = "git::https://github.com/ifaakash/Terraform//Bastion?ref=main"
+  source                = "git::https://github.com/ifaakash/Terraform//Networking//NIC?ref=main"
   prefix                = var.prefix
-  network_interface_id  = ""
-  security_group_ids    = [module.networking.security_group_id]
+  network_interface_id  = module.bastion_eni.eni
   instance_profile_name = module.iam.instance_profile_name
   default_tags          = merge({ "Name" = "${var.prefix}-bastion-instance" }, var.default_tags)
 }
