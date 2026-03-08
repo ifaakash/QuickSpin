@@ -75,7 +75,7 @@ jobs:
       #     terraform destroy --auto-approve
 
   configuration-management:
-    needs: [deploy]
+    needs: [infra-deployment]
     if: false
     runs-on: ubuntu-latest
     steps:
