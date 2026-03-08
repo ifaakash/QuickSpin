@@ -1,4 +1,4 @@
-name: QuickSpin Networking
+name: QuickSpin Deployment
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 jobs:
-  deploy:
+  infra-deployment:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -74,7 +74,7 @@ jobs:
       #     terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
       #     terraform destroy --auto-approve
 
-  ansible:
+  configuration-management:
     needs: [deploy]
     if: false
     runs-on: ubuntu-latest
