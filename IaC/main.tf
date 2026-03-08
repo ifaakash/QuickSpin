@@ -54,7 +54,7 @@ module "ec2_stack" {
 }
 
 module "bastion_eni" {
-  source       = "git::https://github.com/ifaakash/Terraform//NIC?ref=main"
+  source       = "git::https://github.com/ifaakash/Terraform//Networking//NIC?ref=main"
   prefix       = var.prefix
   description  = "Elastic Network Interface for Bastion Instance"
   subnet_id    = var.public_subnet_cidr
