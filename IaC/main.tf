@@ -17,16 +17,9 @@ module "iam" {
   source = "git::https://github.com/ifaakash/Terraform//IAM?ref=feat/key-pair"
 
   ##################### IAM #####################
-
   role_name             = "${var.prefix}-${var.role_name}"
   instance_profile_name = "${var.prefix}-${var.instance_profile_name}"
-
-  ##################### KEY PAIR #####################
-
-  kp_name = "${var.prefix}-key-pair"
-
-  ##################### SSM PARAMETER STORE #####################
-
+  kp_name               = "${var.prefix}-key-pair"
   kp_ssm_parameter_name = "/ssh/${var.prefix}-kp-ssm-parameter"
 }
 
@@ -60,8 +53,13 @@ module "ec2_stack" {
   default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance-${each.key}" }, var.default_tags)
 }
 
-/*
-"ami_id" : instance["ami"],
-"instance_type" : instance["instance_type"],
-"is_public" : instance["is_public"]
-*/
+
+# Bastion instance will go in public subnet
+module "bastion" {
+  source                = "git::https://github.com/ifaakash/Terraform//Bastion?ref=main"
+  prefix                = var.prefix
+  network_interface_id  = ""
+  security_group_ids    = [module.networking.security_group_id]
+  instance_profile_name = module.iam.instance_profile_name
+  default_tags          = merge({ "Name" = "${var.prefix}-bastion-instance" }, var.default_tags)
+}

@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   deploy:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
