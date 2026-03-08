@@ -65,7 +65,6 @@ module "bastion_eni" {
 # Bastion instance will go in public subnet
 module "bastion" {
   source                = "git::https://github.com/ifaakash/Terraform//Bastion?ref=main"
-  prefix                = var.prefix
   network_interface_id  = module.bastion_eni.eni
   instance_profile_name = module.iam.instance_profile_name
   default_tags          = merge({ "Name" = "${var.prefix}-bastion-instance" }, var.default_tags)
