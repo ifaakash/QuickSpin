@@ -58,7 +58,7 @@ module "bastion_eni" {
   prefix       = var.prefix
   description  = "Elastic Network Interface for Bastion Instance"
   subnet_id    = var.public_subnet_cidr
-  sg_id        = [module.networking.security_group_id]
+  sg_id        = module.networking.security_group_id
   default_tags = merge({ "Name" = "${var.prefix}-bastion-eni" }, var.default_tags)
 }
 
