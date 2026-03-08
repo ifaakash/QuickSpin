@@ -57,7 +57,7 @@ module "bastion_eni" {
   source       = "git::https://github.com/ifaakash/Terraform//Networking//NIC?ref=main"
   prefix       = var.prefix
   description  = "Elastic Network Interface for Bastion Instance"
-  subnet_id    = var.public_subnet_cidr
+  subnet_id    = module.networking.public_subnet_id
   sg_id        = module.networking.security_group_id
   default_tags = merge({ "Name" = "${var.prefix}-bastion-eni" }, var.default_tags)
 }
