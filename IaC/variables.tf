@@ -72,7 +72,8 @@ variable "default_tags" {
   description = "Default tags for resources deployment"
   type        = map(string)
   default = {
-    "Project"    = "QuickSpin"
-    "Created_by" = "ifaakash" # pick github username
+    "Project" = "QuickSpin"
+    # TODO: pick github.repository_owner
+    "Created_by" = "ifaakash"
   }
 }

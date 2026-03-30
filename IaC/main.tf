@@ -44,8 +44,10 @@ module "ec2_stack" {
 
   ##################### INSTANCE #####################
 
-  ami_id                = each.value.ami_id
-  instance_type         = each.value.instance_type
+  ami_id        = each.value.ami_id
+  instance_type = each.value.instance_type
+
+  # TODO: This module.en[each.key] depends on the ENI, upon returning in same format, as required below
   network_interface_id  = module.eni[each.key].eni
   security_group_ids    = [module.networking.security_group_id]
   instance_profile_name = module.iam.instance_profile_name
