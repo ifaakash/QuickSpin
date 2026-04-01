@@ -36,6 +36,7 @@ jobs:
         run: |
           python yaml-to-json.py | tee terraform.tfvars.json
           mv terraform.tfvars.json ../IaC/
+          echo "tfvars=$(cat ../IaC/terraform.tfvars.json | jq -c .)" >> $GITHUB_OUTPUT
 
       - name: Connect to Cloud Provider
         uses: aws-actions/configure-aws-credentials@v5.0.0
@@ -111,7 +112,7 @@ jobs:
           echo "Waiting 60s for SSM agent..."
           sleep 60
 
-      - name: Run Ansible Inventory file
+      - name: Run Ansible Inventory and Playbook
         working-directory: Ansible
         # possible flags are --graph, --list and --host
         run: |
