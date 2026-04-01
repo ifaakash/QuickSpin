@@ -59,6 +59,7 @@ variable "instances" {
     ami_id        = string
     instance_type = string
     is_public     = bool
+    packages      = string
   }))
 }
 

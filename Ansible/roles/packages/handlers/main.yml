@@ -1,0 +1,6 @@
+---
+- name: Verify packages
+  ansible.builtin.command: "which {{ item }}"
+  loop: "{{ quickspin_packages }}"
+  changed_when: false
+  failed_when: false
