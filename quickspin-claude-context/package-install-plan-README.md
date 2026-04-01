@@ -49,7 +49,7 @@ Ansible role           →  apt/yum install nginx docker
 
 ```
 Ansible/
-├── site.yml                  ← main entry point playbook
+├── site.yml                  ← main entry point playbookh
 └── roles/
     └── packages/             ← generic package installer
         ├── tasks/main.yml    ← apt (Debian) + yum (RedHat) tasks

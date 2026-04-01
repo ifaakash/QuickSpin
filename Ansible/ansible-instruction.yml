@@ -3,4 +3,6 @@
   hosts: all
   gather_facts: true
   roles:
-    - packages
+    - role: packages
+      vars:
+        quickspin_packages:
