@@ -36,6 +36,7 @@ jobs:
         run: |
           python yaml-to-json.py | tee terraform.tfvars.json
           mv terraform.tfvars.json ../IaC/
+          echo "tfvars=$(cat ../IaC/terraform.tfvars.json | jq -c .)" >> $GITHUB_OUTPUT
 
       - name: Connect to Cloud Provider
         uses: aws-actions/configure-aws-credentials@v5.0.0

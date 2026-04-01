@@ -282,4 +282,38 @@ Every key defined in `compose` becomes a host variable available in playbooks �
 
 ---
 
+## 16. GitHub Actions — `GITHUB_OUTPUT` (Passing Data Between Steps/Jobs)
+
+### Between Steps
+
+```yaml
+- name: Set a value
+  id: my_step                    # ← required to reference later
+  run: echo "key=value" >> $GITHUB_OUTPUT
+
+- name: Use the value
+  run: echo "${{ steps.my_step.outputs.key }}"
+```
+
+### Between Jobs
+
+```yaml
+jobs:
+  job1:
+    outputs:
+      my_key: ${{ steps.my_step.outputs.my_key }}   # ← expose to other jobs
+    steps:
+      - id: my_step
+        run: echo "my_key=hello" >> $GITHUB_OUTPUT
+
+  job2:
+    needs: job1
+    steps:
+      - run: echo "${{ needs.job1.outputs.my_key }}"
+```
+
+**Pattern:** `steps.<id>.outputs.<key>` within a job, `needs.<job>.outputs.<key>` across jobs.
+
+---
+
 *New concepts will be added as we encounter them throughout the project.*
