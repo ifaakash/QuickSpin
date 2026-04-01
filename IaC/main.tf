@@ -44,13 +44,15 @@ module "ec2_stack" {
 
   ##################### INSTANCE #####################
 
-  ami_id                = each.value.ami_id
-  instance_type         = each.value.instance_type
+  ami_id        = each.value.ami_id
+  instance_type = each.value.instance_type
+
+  # TODO: This module.en[each.key] depends on the ENI, upon returning in same format, as required below
   network_interface_id  = module.eni[each.key].eni
   security_group_ids    = [module.networking.security_group_id]
   instance_profile_name = module.iam.instance_profile_name
   depends_on            = [module.networking, module.iam, module.eni]
-  default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance-${each.key}" }, var.default_tags)
+  default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance-${each.key}" }, { "Packages" = "${each.value.packages}" }, var.default_tags)
 }
 
 module "bastion_eni" {

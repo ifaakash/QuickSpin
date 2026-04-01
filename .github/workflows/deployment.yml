@@ -8,6 +8,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  # TODO: Can we replace github.repository_owner with username ( from quickspin.yml )?
   BUCKET_NAME: "quickspin-${{ github.repository_owner }}-backend"
 
 permissions:
@@ -55,12 +56,12 @@ jobs:
             aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
           fi
 
-      # - name: Terraform Infra Deployment
-      #   working-directory: IaC
-      #   run: |
-      #     terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-      #     terraform plan -out=tfplan
-      #     terraform apply --auto-approve tfplan
+      - name: Terraform Infra Deployment
+        working-directory: IaC
+        run: |
+          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
+          terraform plan -out=tfplan
+          terraform apply --auto-approve tfplan
 
       # - name: Fetch the value of key from the Parameter Store
       #   run: |
@@ -68,15 +69,14 @@ jobs:
       #     Generate the PEM file for logging to the instance
       #     aws ssm get get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
 
-      - name: Destroy Infra
-        working-directory: IaC
-        run: |
-          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
-          terraform destroy --auto-approve
+      # - name: Destroy Infra
+      #   working-directory: IaC
+      #   run: |
+      #     terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
+      #     terraform destroy --auto-approve
 
   configuration-management:
     needs: [infra-deployment]
-    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -106,12 +106,17 @@ jobs:
           ls -l /opt/pipx/venvs/ansible-core/bin/
           /opt/pipx/venvs/ansible-core/bin/python -m pip install boto3 botocore
 
+      - name: Wait for SSM agent registration
+        run: |
+          echo "Waiting 60s for SSM agent..."
+          sleep 60
+
       - name: Run Ansible Inventory file
         working-directory: Ansible
         # possible flags are --graph, --list and --host
         run: |
           ansible-inventory -i inventory_aws.aws_ec2.yml --list
-          ansible-playbook -i inventory_aws.aws_ec2.yml ssm-playbook.yml
+          ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
 
       - name: List out the current folders
         run: |

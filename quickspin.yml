@@ -10,9 +10,12 @@ instances:
   #   instance_type: "t2.small"
   #   is_public: true
 
+  # TODO: Can we pick AMI by default? Just input the OS from the user
   - ami: "ami-0360c520857e3138f"
     instance_type: "t2.micro"
     is_public: false
+    packages:
+      - nginx
 
   # - ami: "ami-0360c520857e3138f"
   #   instance_type: "t2.micro"

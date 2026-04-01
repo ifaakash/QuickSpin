@@ -1,0 +1,16 @@
+---
+- name: Install package ( RedHat )
+  ansible.builtin.yum:
+    name: "{{ quickspin_packages }}"
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+  notify: Verify packages
+
+- name: Install package ( Debian )
+  ansible.builtin.apt:
+    name: "{{ quickspin_packages }}"
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+  notify: Verify packages
