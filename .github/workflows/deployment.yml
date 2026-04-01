@@ -112,7 +112,7 @@ jobs:
           echo "Waiting 60s for SSM agent..."
           sleep 60
 
-      - name: Run Ansible Inventory file
+      - name: Run Ansible Inventory and Playbook
         working-directory: Ansible
         # possible flags are --graph, --list and --host
         run: |
