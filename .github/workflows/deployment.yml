@@ -77,7 +77,6 @@ jobs:
 
   configuration-management:
     needs: [infra-deployment]
-    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -106,6 +105,11 @@ jobs:
           ansible --version
           ls -l /opt/pipx/venvs/ansible-core/bin/
           /opt/pipx/venvs/ansible-core/bin/python -m pip install boto3 botocore
+
+      - name: Wait for SSM agent registration
+        run: |
+          echo "Waiting 60s for SSM agent..."
+          sleep 60
 
       - name: Run Ansible Inventory file
         working-directory: Ansible
