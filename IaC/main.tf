@@ -1,7 +1,7 @@
 locals {
-  default_tags = { 
+  default_tags = {
     "Project"    = var.prefix,
-    "Created_by" = var.created_by 
+    "Created_by" = var.created_by
   }
 }
 
