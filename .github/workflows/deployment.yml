@@ -64,7 +64,7 @@ jobs:
 
   infra-deployment:
     needs: [linting]
-    if: github.event.inputs.destroy_infra != 'true'
+    if: github.event.inputs.destroy_infra != 'true' && false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -111,12 +111,6 @@ jobs:
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
           terraform apply --auto-approve tfplan
-
-      - name: Fetch the value of key from the Parameter Store
-        run: |
-          aws sts get-caller-identity
-          # Generate the PEM file for logging to the instance
-          # aws ssm get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
 
   configuration-management:
     needs: [infra-deployment]
