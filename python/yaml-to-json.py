@@ -54,6 +54,11 @@ def main():
         "prefix": prefix,
     }
 
+    # Extract optional global fields
+    for field in ["created_by", "role_name", "instance_profile_name"]:
+        if field in global_config:
+            tfvars[field] = str(global_config[field]).strip()
+
     # 3. Validate 'networking' section
     if "networking" not in config or not isinstance(config["networking"], dict):
         error_exit("Missing or invalid 'networking' block in configuration.")
@@ -75,6 +80,18 @@ def main():
 
     # Formulate tfvars output dictionary
     tfvars["user_ip"] = f"{raw_ip}/32"
+
+    # Extract optional CIDRs
+    for cidr_key in ["vpc_cidr", "public_subnet_cidr", "private_subnet_cidr"]:
+        if cidr_key in networking:
+            cidr_val = str(networking[cidr_key]).strip()
+            try:
+                ipaddress.IPv4Network(cidr_val)
+            except ValueError:
+                error_exit(
+                    f"Invalid CIDR block format for '{cidr_key}': '{cidr_val}'. Must be a valid IPv4 network (e.g., 10.0.0.0/16)."
+                )
+            tfvars[cidr_key] = cidr_val
 
     # 4. Validate 'instances' section
     if "instances" not in config:
@@ -134,30 +151,16 @@ def main():
         # Join the list elements into a comma-separated string for Terraform
         joined_packages = ",".join(str(pkg).strip() for pkg in packages_list)
 
-        validated_instances.append(
-            {
-                "ami_id": ami,
-                "instance_type": instance_type,
-                "is_public": is_public,
-                "packages": joined_packages,
-            }
-        )
-
-    tfvars["instances"] = validated_instances
-
-    # 5. Write to output tfvars JSON
-    try:
-        with open(OUTPUT_PATH, "w") as f:
-            json.dump(tfvars, f, indent=4)
-        print(f"Successfully converted '{CONFIG_PATH}' to '{OUTPUT_PATH}'.")
-    except Exception as exc:
-        error_exit(f"Failed to write TFVARS JSON output: {exc}")
-
-
-if __name__ == "__main__":
-    main()
-          }
-        )
+        instance_data = {
+            "ami_id": ami,
+            "instance_type": instance_type,
+            "is_public": is_public,
+            "packages": joined_packages,
+        }
+        if name is not None:
+            instance_data["name"] = name
+            
+        validated_instances.append(instance_data)
 
     tfvars["instances"] = validated_instances
 

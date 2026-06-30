@@ -1,5 +1,8 @@
 locals {
-  default_tags = merge(var.default_tags, { "Created_by" = var.created_by })
+  default_tags = merge(var.default_tags, { 
+    "Project"    = var.prefix,
+    "Created_by" = var.created_by 
+  })
 }
 
 module "networking" {
@@ -38,7 +41,7 @@ module "eni" {
   subnet_id    = each.value.is_public ? module.networking.public_subnet_id : module.networking.private_subnet_id
   sg_id        = module.networking.security_group_id
   depends_on   = [module.networking]
-  default_tags = each.value.is_public ? merge({ "Name" = "${var.prefix}-public-eni-${each.key}" }, var.default_tags) : merge({ "Name" = "${var.prefix}-private-eni-${each.key}" }, var.default_tags)
+  default_tags = merge({ "Name" = coalesce(each.value.name != null ? "${each.value.name}-eni" : null, "${var.prefix}-${each.value.is_public ? "public" : "private"}-eni-${each.key}") }, local.default_tags)
 }
 
 module "ec2_stack" {
@@ -55,7 +58,7 @@ module "ec2_stack" {
   security_group_ids    = [module.networking.security_group_id]
   instance_profile_name = module.iam.instance_profile_name
   depends_on            = [module.networking, module.iam, module.eni]
-  default_tags          = merge({ "Name" = "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance-${each.key}" }, { "Packages" = "${each.value.packages}" }, var.default_tags)
+  default_tags          = merge({ "Name" = coalesce(each.value.name, "${var.prefix}-${each.value.is_public ? "public" : "private"}-instance-${each.key}") }, { "Packages" = "${each.value.packages}" }, local.default_tags)
 }
 
 module "bastion_eni" {
@@ -64,7 +67,7 @@ module "bastion_eni" {
   description  = "Elastic Network Interface for Bastion Instance"
   subnet_id    = module.networking.public_subnet_id
   sg_id        = module.networking.security_group_id
-  default_tags = merge({ "Name" = "${var.prefix}-bastion-eni" }, var.default_tags)
+  default_tags = merge({ "Name" = "${var.prefix}-bastion-eni" }, local.default_tags)
 }
 
 # Bastion instance will go in public subnet
@@ -72,5 +75,5 @@ module "bastion" {
   source                = "git::https://github.com/ifaakash/Terraform//Bastion?ref=main"
   network_interface_id  = module.bastion_eni.eni
   instance_profile_name = module.iam.instance_profile_name
-  default_tags          = merge({ "Name" = "${var.prefix}-bastion-instance" }, var.default_tags)
+  default_tags          = merge({ "Name" = "${var.prefix}-bastion-instance" }, local.default_tags)
 }

@@ -60,6 +60,7 @@ variable "instance_profile_name" {
 variable "instances" {
   description = "List of Instances to be created"
   type = list(object({
+    name          = optional(string)
     ami_id        = string
     instance_type = string
     is_public     = bool
@@ -83,7 +84,5 @@ variable "created_by" {
 variable "default_tags" {
   description = "Default tags for resources deployment"
   type        = map(string)
-  default = {
-    "Project" = "QuickSpin"
-  }
+  default     = {}
 }
