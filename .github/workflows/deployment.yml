@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs: 
       destroy_infra: 
-        description: Destroy the infra created
+        description: Want to destroy the infra?
         type: boolean
         default: false 
         required: false
