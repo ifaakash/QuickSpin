@@ -5,16 +5,15 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs: 
-      destroy_infra: 
+    inputs:
+      destroy_infra:
         description: Want to destroy the infra?
         type: boolean
-        default: false 
+        default: false
         required: false
 
 env:
   AWS_REGION: us-east-1
-  # TODO: Can we replace github.repository_owner with username ( from quickspin.yml )?
   BUCKET_NAME: "quickspin-${{ github.repository_owner }}-backend"
 
 permissions:
@@ -23,7 +22,7 @@ permissions:
 
 jobs:
   infra-deployment:
-    if: github.event.inputs.destroy_infra != 'true'
+    if: github.event.inputs.destroy_infra != 'true' && false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -58,7 +57,7 @@ jobs:
         working-directory: IaC
         run: |
           if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "Bucket $BUCKET_NAME already exists, skipping creation."
+            echo "Bucket $BUCKET_NAME already exists and will be used to store state file, skipping creation!!"
           else
             echo "Bucket $BUCKET_NAME does not exist, creating..."
             aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
@@ -70,12 +69,6 @@ jobs:
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
           terraform apply --auto-approve tfplan
-
-      - name: Fetch the value of key from the Parameter Store
-        run: |
-          aws sts get-caller-identity
-          # Generate the PEM file for logging to the instance
-          # aws ssm get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
 
   configuration-management:
     needs: [infra-deployment]
