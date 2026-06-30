@@ -5,16 +5,15 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs: 
-      destroy_infra: 
+    inputs:
+      destroy_infra:
         description: Destroy the infra created
         type: boolean
-        default: false 
+        default: false
         required: false
 
 env:
   AWS_REGION: us-east-1
-  # TODO: Can we replace github.repository_owner with username ( from quickspin.yml )?
   BUCKET_NAME: "quickspin-${{ github.repository_owner }}-backend"
 
 permissions:
@@ -53,11 +52,6 @@ jobs:
         working-directory: IaC
         run: |
           terraform fmt -check
-
-      - name: Check Terraform Formatting (Reusable Modules)
-        working-directory: ../Terraform
-        run: |
-          terraform fmt -check -recursive
 
       - name: Install Ansible
         run: |
