@@ -1,8 +1,8 @@
 locals {
-  default_tags = merge(var.default_tags, { 
+  default_tags = { 
     "Project"    = var.prefix,
     "Created_by" = var.created_by 
-  })
+  }
 }
 
 module "networking" {

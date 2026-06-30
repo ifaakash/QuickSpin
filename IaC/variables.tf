@@ -80,9 +80,3 @@ variable "created_by" {
   type        = string
   default     = "ifaakash"
 }
-
-variable "default_tags" {
-  description = "Default tags for resources deployment"
-  type        = map(string)
-  default     = {}
-}
