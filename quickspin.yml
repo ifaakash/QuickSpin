@@ -1,9 +1,17 @@
 global:
   region: "us-east-1"
   project_prefix: "quickspin"
+  # Optional overrides
+  # created_by: "your-name"
+  # role_name: "custom-iam-role"
+  # instance_profile_name: "custom-instance-profile"
 
 networking:
   user_ip: "49.36.144.148"
+  # Optional overrides (must be valid IPv4 networks)
+  # vpc_cidr: "10.0.0.0/16"
+  # public_subnet_cidr: "10.0.0.0/22"
+  # private_subnet_cidr: "10.0.4.0/22"
 
 instances:
   # ami          : "" # "ami-0360c520857e3138f"
@@ -13,5 +21,6 @@ instances:
   - ami: "ami-0360c520857e3138f"
     instance_type: "t2.micro"
     is_public: false
+    # name: "my-custom-web-server" # Optional custom name
     packages:
       - nginx
