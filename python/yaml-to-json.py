@@ -1,5 +1,23 @@
 """
 Converts quickspin.yml to terraform.tfvars.json format with robust validation.
+
+Example Output (terraform.tfvars.json):
+{
+    "region": "us-east-1",
+    "prefix": "quickspin",
+    "created_by": "your-name",
+    "user_ip": "49.36.144.148/32",
+    "vpc_cidr": "10.0.0.0/16",
+    "instances": [
+        {
+            "ami_id": "ami-0360c520857e3138f",
+            "instance_type": "t2.micro",
+            "is_public": false,
+            "packages": "nginx",
+            "name": "my-custom-web-server"
+        }
+    ]
+}
 """
 
 import ipaddress
