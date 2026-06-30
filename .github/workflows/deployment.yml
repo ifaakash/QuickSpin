@@ -5,12 +5,12 @@ on:
     branches:
       - main
   workflow_dispatch:
-    input: 
-      destory_infra: 
-         description: Destroy the infra created
-         type: boolean
-         default: false 
-         required: false
+    inputs: 
+      destroy_infra: 
+        description: Destroy the infra created
+        type: boolean
+        default: false 
+        required: false
 
 env:
   AWS_REGION: us-east-1
@@ -23,6 +23,7 @@ permissions:
 
 jobs:
   infra-deployment:
+    if: github.event.inputs.destroy_infra != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -33,9 +34,9 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install PyYAML
+      - name: Install Python dependencies
         run: |
-          pip install pyyaml
+          pip install -r python/requirements.txt
 
       - name: Convert YAML -> TFVARS.JSON
         working-directory: python
@@ -73,8 +74,8 @@ jobs:
       - name: Fetch the value of key from the Parameter Store
         run: |
           aws sts get-caller-identity
-          Generate the PEM file for logging to the instance
-          aws ssm get get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
+          # Generate the PEM file for logging to the instance
+          # aws ssm get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
 
   configuration-management:
     needs: [infra-deployment]
@@ -124,14 +125,23 @@ jobs:
           echo "Repository structure" && ls
 
   destroy_infra:
-   runs-on: ubuntu:latest
-   if: ${{ github.events.inputs.destory_infra }} == true
-   steps:
-       - name: Checkout code
-         uses: actions/checkout@v5
+    if: github.event.inputs.destroy_infra == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-       - name: Destroy Infra
-         working-directory: IaC
-         run: |
+      - name: Connect to Cloud Provider
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Destroy Infra
+        working-directory: IaC
+        run: |
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform destroy --auto-approve
