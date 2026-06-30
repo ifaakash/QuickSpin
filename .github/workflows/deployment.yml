@@ -12,18 +12,38 @@ on:
         default: false
         required: false
 
-env:
-  AWS_REGION: us-east-1
-  BUCKET_NAME: "quickspin-${{ github.repository_owner }}-backend"
-
 permissions:
   id-token: write
   contents: write
 
 jobs:
-  linting:
+  extract-config:
     if: github.event.inputs.destroy_infra != 'true'
     runs-on: ubuntu-latest
+    outputs:
+      AWS_REGION: ${{ steps.extract.outputs.AWS_REGION }}
+      QUICKSPIN_PREFIX: ${{ steps.extract.outputs.QUICKSPIN_PREFIX }}
+      BUCKET_NAME: ${{ steps.extract.outputs.BUCKET_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Extract Global Variables
+        id: extract
+        run: |
+          REGION=$(yq -r '.global.region' quickspin.yml)
+          PREFIX=$(yq -r '.global.project_prefix' quickspin.yml)
+          echo "AWS_REGION=$REGION" >> $GITHUB_OUTPUT
+          echo "QUICKSPIN_PREFIX=$PREFIX" >> $GITHUB_OUTPUT
+          echo "BUCKET_NAME=$PREFIX-${{ github.repository_owner }}-backend" >> $GITHUB_OUTPUT
+
+  linting:
+    needs: [extract-config]
+    if: github.event.inputs.destroy_infra != 'true'
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
+      QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -63,9 +83,13 @@ jobs:
           ansible-playbook --syntax-check -i inventory_aws.aws_ec2.yml ansible-instruction.yml
 
   infra-deployment:
-    needs: [linting]
+    needs: [extract-config, linting]
     if: github.event.inputs.destroy_infra != 'true' && false
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
+      QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
+      BUCKET_NAME: ${{ needs.extract-config.outputs.BUCKET_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -113,8 +137,11 @@ jobs:
           terraform apply --auto-approve tfplan
 
   configuration-management:
-    needs: [infra-deployment]
+    needs: [extract-config, infra-deployment]
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
+      QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -160,8 +187,13 @@ jobs:
           echo "Repository structure" && ls
 
   destroy_infra:
+    needs: [extract-config]
     if: github.event.inputs.destroy_infra == 'true'
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
+      QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
+      BUCKET_NAME: ${{ needs.extract-config.outputs.BUCKET_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

@@ -37,6 +37,23 @@ def main():
     if not config:
         error_exit("Configuration file is empty.")
 
+    # 2.5 Validate 'global' section
+    if "global" not in config or not isinstance(config["global"], dict):
+        error_exit("Missing or invalid 'global' block in configuration.")
+    
+    global_config = config["global"]
+    if "region" not in global_config or "project_prefix" not in global_config:
+        error_exit("Missing 'region' or 'project_prefix' under 'global' block.")
+    
+    region = str(global_config["region"]).strip()
+    prefix = str(global_config["project_prefix"]).strip()
+
+    # Formulate tfvars output dictionary
+    tfvars = {
+        "region": region,
+        "prefix": prefix,
+    }
+
     # 3. Validate 'networking' section
     if "networking" not in config or not isinstance(config["networking"], dict):
         error_exit("Missing or invalid 'networking' block in configuration.")
@@ -57,7 +74,7 @@ def main():
         )
 
     # Formulate tfvars output dictionary
-    tfvars = {"user_ip": f"{raw_ip}/32"}
+    tfvars["user_ip"] = f"{raw_ip}/32"
 
     # 4. Validate 'instances' section
     if "instances" not in config:

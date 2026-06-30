@@ -47,14 +47,14 @@ apply: compile
 
 ansible:
 	@echo "--> Executing Configuration Management via SSM..."
-	cd Ansible && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+	cd Ansible && export AWS_REGION=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["region"])') && export QUICKSPIN_PREFIX=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["project_prefix"])') && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
 
 deploy: compile
 	@echo "--> Deploying and Configuring full stack..."
 	cd IaC && terraform init && terraform apply -auto-approve
 	@echo "--> Waiting 60 seconds for instances and SSM agent registration..."
 	sleep 60
-	cd Ansible && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+	cd Ansible && export AWS_REGION=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["region"])') && export QUICKSPIN_PREFIX=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["project_prefix"])') && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
 
 destroy:
 	@echo "--> Destroying Infrastructure..."

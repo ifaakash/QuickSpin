@@ -2,11 +2,11 @@
 plugin: amazon.aws.aws_ec2
 
 regions:
-  - us-east-1
+  - "{{ lookup('env', 'AWS_REGION') | default('us-east-1', true) }}"
 
 filters:
   instance-state-name: running
-  "tag:Project": QuickSpin
+  "tag:Project": "{{ lookup('env', 'QUICKSPIN_PREFIX') | default('quickspin', true) }}"
 
 hostnames:
   - tag:Name
@@ -15,7 +15,7 @@ compose:
   ansible_connection: "'community.aws.aws_ssm'"
   ansible_host: instance_id
   ansible_python_interpreter: "'/usr/bin/python3'"
-  ansible_aws_ssm_region: "'us-east-1'"
+  ansible_aws_ssm_region: "'{{ lookup('env', 'AWS_REGION') | default('us-east-1', true) }}'"
   # TODO: Create the bucket name using Terraform
   # Make an entry in the IaC/main.tf with S3 module
   # Create a module in Terraform, to accept the list of bucket names from the parent module
