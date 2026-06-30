@@ -73,12 +73,17 @@ variable "user_ip" {
 }
 
 ##################### DEFAULT TAGS #####################
+
+variable "created_by" {
+  description = "The creator of these resources"
+  type        = string
+  default     = "ifaakash"
+}
+
 variable "default_tags" {
   description = "Default tags for resources deployment"
   type        = map(string)
   default = {
     "Project" = "QuickSpin"
-    # TODO: pick github.repository_owner
-    "Created_by" = "ifaakash"
   }
 }

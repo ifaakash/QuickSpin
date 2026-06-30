@@ -109,6 +109,9 @@ def main():
         ami = str(instance["ami"]).strip()
         instance_type = str(instance["instance_type"]).strip()
         is_public = instance["is_public"]
+        name = instance.get("name")
+        if name is not None:
+            name = str(name).strip()
 
         if not ami.startswith("ami-"):
             error_exit(
@@ -138,6 +141,22 @@ def main():
                 "is_public": is_public,
                 "packages": joined_packages,
             }
+        )
+
+    tfvars["instances"] = validated_instances
+
+    # 5. Write to output tfvars JSON
+    try:
+        with open(OUTPUT_PATH, "w") as f:
+            json.dump(tfvars, f, indent=4)
+        print(f"Successfully converted '{CONFIG_PATH}' to '{OUTPUT_PATH}'.")
+    except Exception as exc:
+        error_exit(f"Failed to write TFVARS JSON output: {exc}")
+
+
+if __name__ == "__main__":
+    main()
+          }
         )
 
     tfvars["instances"] = validated_instances

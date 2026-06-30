@@ -18,10 +18,26 @@ QuickSpin automatically provisions AWS virtual machines and configures them via 
 ### 1. Configure
 Define your desired infrastructure in the `quickspin.yml` file located at the root of the project:
 ```yaml
+global:
+  region: "us-east-1"
+  project_prefix: "quickspin"
+  # Optional overrides
+  # created_by: "your-name"
+  # role_name: "custom-iam-role"
+  # instance_profile_name: "custom-instance-profile"
+
+networking:
+  user_ip: "1.2.3.4"
+  # Optional overrides (must be valid IPv4 networks)
+  # vpc_cidr: "10.0.0.0/16"
+  # public_subnet_cidr: "10.0.0.0/22"
+  # private_subnet_cidr: "10.0.4.0/22"
+
 instances:
   - ami: "ami-0360c520857e3138f"
     instance_type: "t2.micro"
     is_public: false
+    # name: "my-custom-web-server" # Optional custom name
     packages:
       - nginx
 ```

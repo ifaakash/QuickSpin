@@ -1,3 +1,7 @@
+locals {
+  default_tags = merge(var.default_tags, { "Created_by" = var.created_by })
+}
+
 module "networking" {
   source = "git::https://github.com/ifaakash/Terraform//Networking?ref=main"
   prefix = var.prefix
@@ -10,7 +14,7 @@ module "networking" {
   enable_dns_hostnames = var.enable_dns_hostnames
   enable_dns_support   = var.enable_dns_support
   user_ip              = var.user_ip
-  default_tags         = var.default_tags
+  default_tags         = local.default_tags
 }
 
 module "iam" {
