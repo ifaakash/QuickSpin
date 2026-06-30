@@ -1,5 +1,7 @@
 # QuickSpin
 
+[![QuickSpin Deployment](https://github.com/ifaakash/QuickSpin/actions/workflows/deployment.yml/badge.svg)](https://github.com/ifaakash/QuickSpin/actions/workflows/deployment.yml)
+
 QuickSpin is a lightweight infrastructure orchestration tool designed to abstract the complexities of provisioning and configuring secure AWS EC2 environments. It bridges the gap between simple declarative configuration and robust infrastructure-as-code by translating a user-friendly `quickspin.yml` file into Terraform configurations and Ansible playbooks.
 
 ## Project Summary
@@ -25,6 +27,14 @@ instances:
 
 ### 2. Deployment via CI/CD (Recommended)
 The easiest way to deploy is using the included GitHub Actions pipeline.
+
+**Prerequisites for CI/CD:**
+Before running the pipeline, you must configure OpenID Connect (OIDC) authentication between AWS and GitHub:
+1. **Identity Provider:** Set up a GitHub OIDC Identity Provider in your AWS IAM console.
+2. **IAM Role:** Create an AWS IAM role with the necessary permissions for Terraform to provision infrastructure. Configure its trust relationship to allow the GitHub OIDC provider to assume it.
+3. **GitHub Secrets:** Fetch the ARN of the newly created IAM role and add it as a Repository Secret in your GitHub settings named `AWS_ROLE_ARN`. The workflow automatically consumes this secret to securely authenticate without using long-lived access keys.
+
+**Deployment Steps:**
 1. Push your changes to the `main` branch.
 2. The pipeline will automatically:
    - Parse `quickspin.yml`.
