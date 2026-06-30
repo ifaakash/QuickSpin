@@ -1,6 +1,7 @@
 # QuickSpin
 
 [![QuickSpin Deployment](https://github.com/ifaakash/QuickSpin/actions/workflows/deployment.yml/badge.svg)](https://github.com/ifaakash/QuickSpin/actions/workflows/deployment.yml)
+[![Built with Gemini](https://img.shields.io/badge/Built%20with-Gemini-blue.svg)](https://gemini.google.com)
 
 QuickSpin is a lightweight infrastructure orchestration tool designed to abstract the complexities of provisioning and configuring secure AWS EC2 environments. It bridges the gap between simple declarative configuration and robust infrastructure-as-code by translating a user-friendly `quickspin.yml` file into Terraform configurations and Ansible playbooks.
 
