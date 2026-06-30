@@ -5,15 +5,16 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      destroy_infra:
-        description: Want to destroy the infra?
+    inputs: 
+      destroy_infra: 
+        description: Destroy the infra created
         type: boolean
-        default: false
+        default: false 
         required: false
 
 env:
   AWS_REGION: us-east-1
+  # TODO: Can we replace github.repository_owner with username ( from quickspin.yml )?
   BUCKET_NAME: "quickspin-${{ github.repository_owner }}-backend"
 
 permissions:
@@ -21,8 +22,55 @@ permissions:
   contents: write
 
 jobs:
+  linting:
+    if: github.event.inputs.destroy_infra != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Python Linting Tools
+        run: |
+          pip install flake8
+
+      - name: Run Flake8 Check
+        working-directory: python
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 yaml-to-json.py --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. Max complexity is set to 10
+          flake8 yaml-to-json.py --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check Terraform Formatting (QuickSpin IaC)
+        working-directory: IaC
+        run: |
+          terraform fmt -check
+
+      - name: Check Terraform Formatting (Reusable Modules)
+        working-directory: ../Terraform
+        run: |
+          terraform fmt -check -recursive
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y ansible -qq > /dev/null 2>&1
+
+      - name: Ansible Syntax Check
+        working-directory: Ansible
+        run: |
+          ansible-playbook --syntax-check -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+
   infra-deployment:
-    if: github.event.inputs.destroy_infra != 'true' && false
+    needs: [linting]
+    if: github.event.inputs.destroy_infra != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -57,7 +105,7 @@ jobs:
         working-directory: IaC
         run: |
           if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "Bucket $BUCKET_NAME already exists and will be used to store state file, skipping creation!!"
+            echo "Bucket $BUCKET_NAME already exists, skipping creation."
           else
             echo "Bucket $BUCKET_NAME does not exist, creating..."
             aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
@@ -69,6 +117,12 @@ jobs:
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
           terraform apply --auto-approve tfplan
+
+      - name: Fetch the value of key from the Parameter Store
+        run: |
+          aws sts get-caller-identity
+          # Generate the PEM file for logging to the instance
+          # aws ssm get-parameter --name ${{secrets.PARAMETER_NAME}} --with-decryption --output text > login-key.pem
 
   configuration-management:
     needs: [infra-deployment]
