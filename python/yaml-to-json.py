@@ -20,7 +20,6 @@ tfvars["instances"] = [
         "ami_id": instance["ami"],
         "instance_type": instance["instance_type"],
         "is_public": instance["is_public"],
-        # TODO: How does the join works?
         "packages": ",".join(instance.get("packages", [])),
     }
     for instance in instances_data
