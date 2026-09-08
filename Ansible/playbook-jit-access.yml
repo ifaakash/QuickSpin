@@ -1,6 +1,9 @@
 ---
 - name: Manage JIT lab user access
-  hosts: all
+  # Target group is explicit, never `all`. Default is the bastions group; pass
+  # -e jit_target=<group> to aim it somewhere else (homelab, cloud).
+  # An API calling this must validate jit_target against a known group list.
+  hosts: "{{ jit_target | default('bastions') }}"
   become: true
   gather_facts: false
   roles:

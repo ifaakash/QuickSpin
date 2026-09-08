@@ -1,0 +1,27 @@
+---
+# Connectivity smoke test. Does exactly one job: prove Ansible can reach a host
+# and run Python on it. No user creation, no packages, no changes of any kind.
+#
+# User creation lives in roles/jit/ — a second copy here would drift.
+#
+#   ansible-playbook -i inventories/static.ini playbook-ping.yml
+#   ansible-playbook -i inventories/static.ini playbook-ping.yml --limit moo
+#
+# Target group is explicit. Pass -e ping_target=cloud to check SSM hosts instead.
+- name: Check Ansible can reach the hosts
+  hosts: "{{ ping_target | default('homelab') }}"
+  become: false
+  gather_facts: true
+
+  tasks:
+    - name: Ping the host
+      ansible.builtin.ping:
+
+    - name: Report what answered
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }} reachable —
+          {{ ansible_distribution }} {{ ansible_distribution_version }}
+          on {{ ansible_architecture }},
+          python {{ ansible_python_version }},
+          connection {{ ansible_connection | default('ssh') }}

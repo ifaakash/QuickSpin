@@ -1,6 +1,9 @@
 ---
 - name: Install packages
-  hosts: all
+  # `cloud` comes from inventories/aws.aws_ec2.yml. Package names are read
+  # from each instance's Packages tag, so this only makes sense for hosts
+  # QuickSpin provisioned. Never `all`.
+  hosts: cloud
   become: true
   gather_facts: true
   roles:
