@@ -75,8 +75,28 @@ Four stat tiles across the top: group count, host count in the selected group,
 last run status, last run duration. All read from the API or the last run; none
 are decorative.
 
-Also: a connection dot in the navbar (green once the inventory loads, red if
+Run feedback: the button shows a spinner, and a live elapsed counter ticks in
+the Output panel header. `POST /api/run` blocks, so something visibly moving is
+what tells you the page has not frozen. `Cmd/Ctrl+Enter` runs from anywhere.
+
+Also: a favicon, a connection dot in the navbar (green once the inventory loads, red if
 `ansible-inventory` fails) and a light/dark toggle persisted in `localStorage`.
+
+### The Output panel
+
+Ansible output is colourised line by line in `lineClass()` — PLAY/TASK headers in
+strong ink, `ok:` green, `changed:` amber, `fatal:`/`UNREACHABLE!` red,
+timestamps and `skipping:` dimmed. The PLAY RECAP line is parsed: a host with
+`unreachable=` or `failed=` above zero goes red, one with `changed=` above zero
+goes amber, otherwise green.
+
+The ansible keyword stays visible in every line, so colour is a second signal,
+never the only one. Output text colours are chosen for readability on the code
+surface (`#006300` green on light, `#4ade80` on dark) rather than reusing the
+status-chip hexes, which are tuned for chips and not for body text.
+
+Each line is a `<span>` whose text is set with `textContent`, so ansible output
+is still never treated as markup.
 
 ### The Command panel
 
