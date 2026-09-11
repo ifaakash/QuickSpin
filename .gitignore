@@ -36,3 +36,8 @@ override.tf.json
 .terraformrc
 terraform.rc
 cladue-context
+
+# FastAPI dashboard local environment
+api/.venv/
+__pycache__/
+*.pyc

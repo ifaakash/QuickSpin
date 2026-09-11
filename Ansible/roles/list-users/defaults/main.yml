@@ -1,0 +1,3 @@
+---
+# This role takes no variables today. The playbook's target group is chosen
+# with -e list_users_target=<group>, and the login user with -e ansible_user=.

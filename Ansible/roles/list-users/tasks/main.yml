@@ -1,0 +1,11 @@
+---
+# getent reads the passwd database over the existing connection. No privilege
+# escalation needed — passwd is world-readable.
+- name: Fetch all users from the passwd database
+  ansible.builtin.getent:
+    database: passwd
+
+# getent_passwd is a dict keyed by username, so the keys are the user list.
+- name: Display the list of usernames
+  ansible.builtin.debug:
+    msg: "{{ getent_passwd.keys() | list }}"

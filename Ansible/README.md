@@ -10,6 +10,7 @@ it's written down first.
 | --- | --- | --- | --- | --- |
 | `inventories/aws.aws_ec2.yml` | SSM (AWS API) | `cloud` | **CI or laptop** | Works because it never needs a network path to the host — the SSM agent dials out |
 | `inventories/static.ini` | SSH over Tailscale | `homelab` | **Laptop only** | A GitHub-hosted runner is not on your tailnet. `100.76.6.76` is unroutable from it |
+| `inventories/dashboard.ini` | SSH over Tailscale | `homelab` | **Laptop only** | What the FastAPI dashboard reads and runs against. Same transport caveat as `static.ini` |
 | `inventories/bastions.yml` | SSH | `bastions` | **Laptop only** | Still a stub — fill in `ansible_host` and the key path before use |
 
 Never put the Tailscale inventory in a CI job. It would need
@@ -33,6 +34,7 @@ testing a Pi.
 | `playbook-ping.yml` | `homelab` | `-e ping_target=cloud` |
 | `playbook-install-package.yml` | `cloud` | — fixed, reads the `Packages` EC2 tag |
 | `playbook-jit-access.yml` | `bastions` | `-e jit_target=homelab` |
+| `playbook-list-users.yml` | `homelab` | `-e list_users_target=cloud` |
 
 ---
 
@@ -78,6 +80,18 @@ ansible-playbook -i inventories/bastions.yml playbook-jit-access.yml \
 `jit_username` must start with `jit_`, and `jit_publickey` must be `ssh-rsa` or
 `ssh-ed25519` — see `roles/jit/tasks/main.yml` for the full validation.
 
+## List users
+
+Read-only. Prints every account in the target's passwd database.
+
+```bash
+ansible-playbook -i inventories/dashboard.ini playbook-list-users.yml \
+  -e ansible_user=ubuntu -e list_users_target=homelab --limit moo
+```
+
+This is the playbook the FastAPI dashboard in `../api/` drives. See
+`../docs/quickspin-claude-context/fastapi-dashboard-README.md`.
+
 ---
 
 ## Layout
@@ -88,12 +102,15 @@ Ansible/
 ├── inventories/
 │   ├── aws.aws_ec2.yml      dynamic, SSM, group `cloud`
 │   ├── static.ini           static, SSH/Tailscale, group `homelab`
+│   ├── dashboard.ini        static, SSH/Tailscale, group `homelab` (read by the API)
 │   └── bastions.yml         static, SSH, group `bastions` (stub)
 ├── playbook-ping.yml        connectivity only
 ├── playbook-install-package.yml
 ├── playbook-jit-access.yml
+├── playbook-list-users.yml  read-only user audit, driven by the dashboard
 └── roles/
     ├── jit/                 create/remove a user + authorized_key
+    ├── list-users/          print the passwd database
     └── packages/            install from the Packages tag
 ```
 

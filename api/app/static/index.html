@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DevOpsHub &middot; QuickSpin</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top bar. Both tabs are real views backed by the API. -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="logo" aria-hidden="true">&#9679;</span>
+      <span class="brand-name">DevOpsHub</span>
+      <span class="brand-sep">/</span>
+      <span class="brand-repo">QuickSpin</span>
+    </div>
+
+    <div class="nav-tabs" role="tablist">
+      <button class="nav-tab is-active" data-view="run" role="tab">Run</button>
+      <button class="nav-tab" data-view="inventory" role="tab">Inventory</button>
+    </div>
+
+    <div class="nav-right">
+      <span class="conn" id="conn">
+        <span class="conn-dot" id="conn-dot"></span>
+        <span id="conn-text">connecting</span>
+      </span>
+      <button class="icon-button" id="theme-toggle" title="Toggle light / dark">
+        <span id="theme-icon">&#9681;</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="shell">
+
+    <!-- Real numbers only: counts come from the inventory, run stats from the last run. -->
+    <section class="stats">
+      <div class="stat">
+        <span class="stat-label">Groups</span>
+        <span class="stat-value" id="stat-groups">&mdash;</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Hosts in group</span>
+        <span class="stat-value" id="stat-hosts">&mdash;</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Last run</span>
+        <span class="stat-value" id="stat-status">&mdash;</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Duration</span>
+        <span class="stat-value" id="stat-duration">&mdash;</span>
+      </div>
+    </section>
+
+    <!-- ============ RUN VIEW ============ -->
+    <section class="view" id="view-run">
+      <div class="layout">
+
+        <aside class="panel panel-config">
+          <div class="panel-head">
+            <h2>Configuration</h2>
+          </div>
+          <div class="panel-body">
+            <div class="field">
+              <label for="group">Group</label>
+              <select id="group"></select>
+            </div>
+            <div class="field">
+              <label for="host">Host</label>
+              <select id="host"></select>
+            </div>
+            <div class="field">
+              <label for="user">Run as</label>
+              <select id="user"></select>
+            </div>
+            <div class="field">
+              <label>Playbook</label>
+              <div class="static-value">playbook-list-users.yml</div>
+            </div>
+            <button id="run" class="run-button">
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="run-label">Run playbook</span>
+            </button>
+            <p class="hint">or press <kbd>⌘</kbd><kbd>↵</kbd></p>
+          </div>
+        </aside>
+
+        <div class="stack">
+
+          <!-- The command panel. Rendered from the API so it cannot drift. -->
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Command</h2>
+              <div class="panel-actions">
+                <span class="badge" id="cmd-badge">preview</span>
+                <button class="text-button" id="copy">Copy</button>
+              </div>
+            </div>
+            <pre class="command" id="command">&mdash;</pre>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Output</h2>
+              <span class="elapsed" id="elapsed"></span>
+          <span class="status" id="status">No run yet</span>
+            </div>
+            <pre class="output" id="output">Pick a target and hit Run.</pre>
+          </section>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ INVENTORY VIEW ============ -->
+    <section class="view" id="view-inventory" hidden>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>dashboard.ini</h2>
+          <span class="panel-note" id="inv-note"></span>
+        </div>
+        <table class="table" id="inv-table">
+          <thead>
+            <tr><th>Group</th><th>Host</th><th>ansible_host</th></tr>
+          </thead>
+          <tbody id="inv-body"></tbody>
+        </table>
+      </section>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

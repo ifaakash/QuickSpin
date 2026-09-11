@@ -1,0 +1,488 @@
+/* DevOpsHub dashboard.
+   Colour lives entirely in custom properties, so the dark theme at the bottom
+   only overrides variables. Theme is driven by [data-theme] on <html>, which
+   app.js sets from the OS preference or a saved choice. */
+
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --border: #e2e5e9;
+  --border-strong: #cfd4da;
+
+  --ink: #14181d;
+  --ink-2: #5b636d;
+  --ink-3: #868e98;
+
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eaf0fe;
+
+  /* Status colours are reserved and always ship with an icon + label,
+     so meaning never rests on colour alone. */
+  --good: #0ca30c;
+  --critical: #d03b3b;
+
+  --code-bg: #f7f8fa;
+  --nav-h: 56px;
+  --radius: 10px;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1114;
+  --surface: #171a1e;
+  --surface-2: #1c2025;
+  --border: #282d34;
+  --border-strong: #363c44;
+
+  --ink: #e8eaed;
+  --ink-2: #9aa3ad;
+  --ink-3: #6f7883;
+
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-soft: #17233c;
+
+  --good: #0ca30c;
+  --critical: #d03b3b;
+
+  --code-bg: #111417;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- navbar ---------- */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.logo {
+  color: var(--accent);
+  font-size: 0.7rem;
+}
+
+.brand-name { font-weight: 700; letter-spacing: -0.01em; }
+.brand-sep  { color: var(--ink-3); }
+.brand-repo { color: var(--ink-2); }
+
+.nav-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+}
+
+.nav-tab {
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.nav-tab:hover { background: var(--surface-2); color: var(--ink); }
+
+.nav-tab.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.conn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+.conn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.conn-dot.ok   { background: var(--good); }
+.conn-dot.fail { background: var(--critical); }
+
+.icon-button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.icon-button:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ---------- shell ---------- */
+
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Values sit in normal ink. Only the run-status tile takes a status colour,
+   and it always carries a glyph and a word alongside it. */
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.stat-value.ok   { color: var(--good); }
+.stat-value.fail { color: var(--critical); }
+
+/* ---------- layout ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* ---------- panels ---------- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.panel-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.panel-note { margin-left: auto; font-size: 0.78rem; color: var(--ink-3); }
+
+.panel-body { padding: 1rem; }
+
+.badge {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.badge.live {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.text-button {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.text-button:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ---------- form ---------- */
+
+.field { margin-bottom: 0.9rem; }
+
+.field label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.static-value {
+  padding: 0.5rem 0.6rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+  color: var(--ink-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.run-button {
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.65rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.run-button:hover:not(:disabled) { background: var(--accent-hover); }
+.run-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- code blocks ---------- */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.status.ok   { color: var(--good); }
+.status.fail { color: var(--critical); }
+
+pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  background: var(--code-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+.command { color: var(--ink); }
+.command.is-stale { color: var(--ink-3); }
+
+.output { max-height: 420px; overflow-y: auto; color: var(--ink-2); }
+
+/* ---------- inventory table ---------- */
+
+.table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+.table th {
+  padding: 0.6rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tr:last-child td { border-bottom: 0; }
+
+.table .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .navbar { gap: 0.75rem; padding: 0 0.85rem; }
+  .brand-sep, .brand-repo { display: none; }
+  .conn span:last-child { display: none; }
+}
+
+/* ---------- run button spinner ---------- */
+
+.run-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  display: none;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.run-button.is-busy .spinner { display: block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.5s; }
+}
+
+.hint {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 17px;
+  padding: 0.05rem 0.25rem;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: inherit;
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+
+.elapsed {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- ansible output colouring ----------
+   Text colours here are picked for readability on the code surface, which is a
+   different job from the status chips. Meaning is never carried by colour alone:
+   every line keeps the ansible keyword that named it (ok:, fatal:, changed:). */
+
+:root {
+  --out-head: #14181d;
+  --out-ok: #006300;
+  --out-changed: #8a5a00;
+  --out-fail: #a81f1f;
+  --out-dim: #99a0a8;
+}
+
+:root[data-theme="dark"] {
+  --out-head: #e8eaed;
+  --out-ok: #4ade80;
+  --out-changed: #fbbf24;
+  --out-fail: #f87171;
+  --out-dim: #5e6670;
+}
+
+.output .ln { display: block; }
+.output .ln-play,
+.output .ln-task    { color: var(--out-head); font-weight: 600; }
+.output .ln-ok      { color: var(--out-ok); }
+.output .ln-changed { color: var(--out-changed); }
+.output .ln-fail    { color: var(--out-fail); }
+.output .ln-warn    { color: var(--out-changed); }
+.output .ln-dim     { color: var(--out-dim); }
+
+.empty { color: var(--ink-3); font-style: italic; }
