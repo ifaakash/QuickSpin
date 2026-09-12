@@ -183,12 +183,13 @@ def main():
     tfvars["instances"] = validated_instances
 
     # 5. Write to output tfvars JSON
-    try:
-        with open(OUTPUT_PATH, "w") as f:
-            json.dump(tfvars, f, indent=4)
-        print(f"Successfully converted '{CONFIG_PATH}' to '{OUTPUT_PATH}'.")
-    except Exception as exc:
-        error_exit(f"Failed to write TFVARS JSON output: {exc}")
+    # Commenting this flow as this will break the tfvars file
+    #try:
+    #    with open(OUTPUT_PATH, "w") as f:
+    #        json.dump(tfvars, f, indent=4)
+    #    print(f"Successfully converted '{CONFIG_PATH}' to '{OUTPUT_PATH}'.")
+    #except Exception as exc:
+    #    error_exit(f"Failed to write TFVARS JSON output: {exc}")
 
 
 if __name__ == "__main__":
