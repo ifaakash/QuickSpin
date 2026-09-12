@@ -41,7 +41,7 @@ jobs:
           PREFIX=$(yq -r '.global.project_prefix' quickspin.yml)
           echo "AWS_REGION=$REGION" >> $GITHUB_OUTPUT
           echo "QUICKSPIN_PREFIX=$PREFIX" >> $GITHUB_OUTPUT
-          echo "BUCKET_NAME=$PREFIX-${{ github.repository_owner }}-backend" >> $GITHUB_OUTPUT
+          echo "BUCKET_NAME=$PREFIX-${{ github.repository_owner }}-$REGION-backend" >> $GITHUB_OUTPUT
 
   linting:
     needs: [extract-config]
