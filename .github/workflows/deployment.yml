@@ -1,10 +1,10 @@
 name: QuickSpin Deployment
 
 on:
-  push:
-    branches:
-      - main
-      - feat/disable-ansible-steps
+#  push:
+#    branches:
+#      - main
+#      - feat/disable-ansible-steps
   workflow_dispatch:
     inputs:
       destroy_infra:
@@ -14,6 +14,11 @@ on:
         required: false
       enable_ansible:
         description: Enable Ansible steps?
+        type: boolean
+        default: false
+        required: false
+      run_plan_as_destroy:
+        description: Run plan as destory?
         type: boolean
         default: false
         required: false
@@ -91,7 +96,7 @@ jobs:
   infra-deployment:
     # needs: [extract-config, linting]
     needs: [extract-config]
-    if: github.event.inputs.destroy_infra != 'true'
+    if: github.event.inputs.destroy_infra != 'true' || github.event.inputs.destroy_infra == 'true'
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
@@ -141,7 +146,8 @@ jobs:
         run: |
           terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
-          terraform apply --auto-approve tfplan
+          # terraform apply --auto-approve tfplan
+          terraform destroy --auto-approve
 
   configuration-management:
     needs: [extract-config, infra-deployment]
