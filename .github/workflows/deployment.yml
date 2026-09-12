@@ -7,7 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       destroy_infra:
-        description: Destroy the infra created
+        description: Destroy the infra created?
+        type: boolean
+        default: false
+        required: false
+      enable_ansible:
+        description: Enable Ansible steps?
         type: boolean
         default: false
         required: false
@@ -39,7 +44,7 @@ jobs:
 
   linting:
     needs: [extract-config]
-    if: github.event.inputs.destroy_infra != 'true'
+    if: github.event.inputs.destroy_infra != 'true' && github.event.inputs.enable_ansible == "true"
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
@@ -84,7 +89,7 @@ jobs:
 
   infra-deployment:
     needs: [extract-config, linting]
-    if: github.event.inputs.destroy_infra != 'true' && false
+    if: github.event.inputs.destroy_infra != 'true'
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
@@ -138,6 +143,7 @@ jobs:
 
   configuration-management:
     needs: [extract-config, infra-deployment]
+    if: github.event.inputs.enable_ansible == "true"
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
