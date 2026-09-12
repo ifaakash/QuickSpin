@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   extract-config:
-    if: github.event.inputs.destroy_infra != 'true'
+    # if: github.event.inputs.destroy_infra != 'true'
     runs-on: ubuntu-latest
     outputs:
       AWS_REGION: ${{ steps.extract.outputs.AWS_REGION }}
