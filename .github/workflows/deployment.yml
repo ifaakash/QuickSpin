@@ -45,7 +45,7 @@ jobs:
 
   linting:
     needs: [extract-config]
-    if: github.event.inputs.destroy_infra != 'true' && github.event.inputs.enable_ansible == "true"
+    if: github.event.inputs.destroy_infra != 'true' && github.event.inputs.enable_ansible == 'true'
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
@@ -144,7 +144,7 @@ jobs:
 
   configuration-management:
     needs: [extract-config, infra-deployment]
-    if: github.event.inputs.enable_ansible == "true"
+    if: github.event.inputs.enable_ansible == 'true'
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
