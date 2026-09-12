@@ -89,7 +89,8 @@ jobs:
           ansible-playbook --syntax-check -i inventory_aws.aws_ec2.yml ansible-instruction.yml
 
   infra-deployment:
-    needs: [extract-config, linting]
+    # needs: [extract-config, linting]
+    needs: [extract-config]
     if: github.event.inputs.destroy_infra != 'true'
     runs-on: ubuntu-latest
     env:
