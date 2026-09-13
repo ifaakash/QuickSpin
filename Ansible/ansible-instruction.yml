@@ -15,5 +15,12 @@
             ] + (
               ["echo 'Install yum-config-manager if missing'", "sudo dnf install -y yum-utils"]
               if ansible_os_family == "RedHat" else []
+            ) + (
+              [
+                "sudo mkdir -p --mode=0755 /usr/share/keyrings",
+                "curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/$(lsb_release -cs).noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null",
+                "curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/$(lsb_release -cs).tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list",
+                "sudo apt-get update && sudo apt-get install -y tailscale"
+              ] if ansible_os_family == "Debian" else []
             )
           }}
