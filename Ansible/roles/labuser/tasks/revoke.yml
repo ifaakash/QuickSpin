@@ -1,0 +1,12 @@
+---
+- name: Remove sudoers entry for {{ jit_username }}
+  ansible.builtin.file:
+    path: "/etc/sudoers.d/{{ jit_username }}"
+    state: absent
+
+- name: Revoke lab user {{ jit_username }}
+  ansible.builtin.user:
+    name: "{{ jit_username }}"
+    state: absent
+    remove: "{{ jit_remove_home | bool }}"
+    force: true

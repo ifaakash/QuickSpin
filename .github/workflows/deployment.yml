@@ -174,7 +174,7 @@ jobs:
       - name: Install Ansible
         run: |
           sudo apt-get update -qq && sudo apt-get install -y ansible -qq > /dev/null 2>&1
-          ansible-galaxy collection install amazon.aws community.aws > /dev/null 2>&1
+          ansible-galaxy collection install amazon.aws community.aws ansible.posix > /dev/null 2>&1
           curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
           sudo dpkg -i session-manager-plugin.deb
 
