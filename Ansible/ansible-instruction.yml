@@ -6,9 +6,14 @@
   roles:
     - role: packages
       vars:
-        shell_commands_list:
-          - "echo 'Starting system check'"
-          - "uname -a"
-          - "uname -m"
-          - "echo 'Install yum-config-manager if missing'"
-          - "sudo yum install yum-utils"
+        shell_commands_list: >-
+          {{
+            [
+              "echo 'Starting system check'",
+              "uname -a",
+              "uname -m"
+            ] + (
+              ["echo 'Install yum-config-manager if missing'", "sudo dnf install -y yum-utils"]
+              if ansible_os_family == "RedHat" else []
+            )
+          }}

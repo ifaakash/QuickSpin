@@ -5,6 +5,29 @@ locals {
   }
 }
 
+# Latest official Canonical Ubuntu 22.04 LTS (Jammy) AMI, used whenever an
+# instance in quickspin.yml doesn't pin its own AMI. Canonical's Ubuntu Server
+# AMIs ship with amazon-ssm-agent pre-installed and support apt out of the box.
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+}
+
 module "networking" {
   source = "git::https://github.com/ifaakash/Terraform//Networking?ref=main"
   prefix = var.prefix
@@ -51,7 +74,7 @@ module "ec2_stack" {
 
   ##################### INSTANCE #####################
 
-  ami_id        = each.value.ami_id
+  ami_id        = coalesce(each.value.ami_id, data.aws_ami.ubuntu.id)
   instance_type = each.value.instance_type
 
   network_interface_id  = module.eni[each.key].eni

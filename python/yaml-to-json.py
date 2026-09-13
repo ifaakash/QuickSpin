@@ -10,7 +10,6 @@ Example Output (terraform.tfvars.json):
     "vpc_cidr": "10.0.0.0/16",
     "instances": [
         {
-            "ami_id": "ami-0360c520857e3138f",
             "instance_type": "t2.micro",
             "is_public": false,
             "packages": "nginx",
@@ -134,21 +133,25 @@ def main():
             )
 
         # Check required instance fields
-        required_fields = ["ami", "instance_type", "is_public"]
+        required_fields = ["instance_type", "is_public"]
         for field in required_fields:
             if field not in instance:
                 error_exit(
                     f"Instance at index {i} is missing the required parameter: '{field}'."
                 )
 
-        ami = str(instance["ami"]).strip()
+        # 'ami' is optional: when omitted, Terraform defaults to the latest
+        # official Ubuntu 22.04 LTS AMI (see data.aws_ami.ubuntu in IaC/main.tf).
+        ami = instance.get("ami")
+        if ami is not None:
+            ami = str(ami).strip()
         instance_type = str(instance["instance_type"]).strip()
         is_public = instance["is_public"]
         name = instance.get("name")
         if name is not None:
             name = str(name).strip()
 
-        if not ami.startswith("ami-"):
+        if ami is not None and not ami.startswith("ami-"):
             error_exit(
                 f"Invalid AMI ID format: '{ami}' at index {i}. AWS AMIs must start with 'ami-'."
             )
@@ -170,11 +173,12 @@ def main():
         joined_packages = ",".join(str(pkg).strip() for pkg in packages_list)
 
         instance_data = {
-            "ami_id": ami,
             "instance_type": instance_type,
             "is_public": is_public,
             "packages": joined_packages,
         }
+        if ami is not None:
+            instance_data["ami_id"] = ami
         if name is not None:
             instance_data["name"] = name
             

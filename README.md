@@ -34,8 +34,7 @@ networking:
   # private_subnet_cidr: "10.0.4.0/22"
 
 instances:
-  - ami: "ami-0360c520857e3138f"
-    instance_type: "t2.micro"
+  - instance_type: "t2.micro"
     is_public: false
     # name: "my-custom-web-server" # Optional custom name
     packages:
