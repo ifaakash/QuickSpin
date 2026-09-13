@@ -24,4 +24,5 @@
 - name: Display command outputs
   ansible.builtin.debug:
     msg: "Command: {{ item.item }} | Return Code: {{ item.rc }} | Output: {{ item.stdout }}"
+  loop: "{{ shell_results.results }}"
   when: shell_results is defined and shell_results.results is defined
