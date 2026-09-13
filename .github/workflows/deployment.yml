@@ -37,7 +37,7 @@ jobs:
     outputs:
       AWS_REGION: ${{ steps.extract.outputs.AWS_REGION }}
       QUICKSPIN_PREFIX: ${{ steps.extract.outputs.QUICKSPIN_PREFIX }}
-      BUCKET_NAMES: ${{ steps.extract.outputs.BUCKET_NAME }}
+      BUCKET_NAMES: ${{ steps.extract.outputs.BUCKET_NAMES }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -212,7 +212,6 @@ jobs:
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
       QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
-      BUCKET_NAME: ${{ needs.extract-config.outputs.BUCKET_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -229,5 +228,5 @@ jobs:
       - name: Destroy Infra
         working-directory: IaC
         run: |
-          terraform init -backend-config="bucket=${{ env.BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
+          terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform destroy --auto-approve
