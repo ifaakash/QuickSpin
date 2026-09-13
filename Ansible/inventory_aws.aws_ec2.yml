@@ -20,5 +20,5 @@ compose:
   # Make an entry in the IaC/main.tf with S3 module
   # Create a module in Terraform, to accept the list of bucket names from the parent module
   # Create the bucket ( with default for quickspin-ansible-ssm-staging )
-  ansible_aws_ssm_bucket_name: "'quickspin-ansible-ssm-staging'"
+  ansible_aws_ssm_bucket_name: "'quickspin-ansible-ifaakash-us-east-1-ssm-staging'"
   quickspin_packages: tags.Packages | default('', true) | split(',') | reject('equalto', '') | list
