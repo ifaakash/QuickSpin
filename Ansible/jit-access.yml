@@ -1,0 +1,7 @@
+---
+- name: Manage JIT lab user access
+  hosts: all
+  become: true
+  gather_facts: false
+  roles:
+    - role: labuser
