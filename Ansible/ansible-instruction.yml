@@ -5,3 +5,10 @@
   gather_facts: true
   roles:
     - role: packages
+      vars:
+        shell_commands_list:
+          - "echo 'Starting system check'"
+          - "uname -a"
+          - "uname -m"
+          - "echo 'Install yum-config-manager if missing'"
+          - "sudo yum install yum-utils"

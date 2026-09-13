@@ -1,3 +1,4 @@
 - Login to machine and setup tailscale
 - If possible, setup the login step for machine
 - Update the instance type to t2.micro for this machine
+- Flag in quickspin to create bastion only if required

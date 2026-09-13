@@ -14,3 +14,14 @@
     update_cache: yes
   when: ansible_os_family == "Debian"
   notify: Verify packages
+
+- name: Execute list of shell commands
+  ansible.builtin.shell: "{{ item }}"
+  loop: "{{ shell_commands_list }}"
+  register: shell_results
+  # ignore_errors: yes
+
+- name: Display command outputs
+  ansible.builtin.debug:
+    msg: "Command: {{ item.item }} | Return Code: {{ item.rc }} | Output: {{ item.stdout }}"
+  when: shell_results is defined and shell_results.results is defined
