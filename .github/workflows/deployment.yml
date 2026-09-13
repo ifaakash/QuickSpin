@@ -34,7 +34,7 @@ jobs:
     outputs:
       AWS_REGION: ${{ steps.extract.outputs.AWS_REGION }}
       QUICKSPIN_PREFIX: ${{ steps.extract.outputs.QUICKSPIN_PREFIX }}
-      BUCKET_NAME: ${{ steps.extract.outputs.BUCKET_NAME }}
+      BUCKET_NAMES: ${{ steps.extract.outputs.BUCKET_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -46,7 +46,7 @@ jobs:
           PREFIX=$(yq -r '.global.project_prefix' quickspin.yml)
           echo "AWS_REGION=$REGION" >> $GITHUB_OUTPUT
           echo "QUICKSPIN_PREFIX=$PREFIX" >> $GITHUB_OUTPUT
-          echo "BUCKET_NAME=$PREFIX-${{ github.repository_owner }}-$REGION-backend" >> $GITHUB_OUTPUT
+          echo "BUCKET_NAMES=$PREFIX-${{ github.repository_owner }}-$REGION-backend $PREFIX-ansible-${{ github.repository_owner }}-$REGION-ssm-staging" >> $GITHUB_OUTPUT
 
   linting:
     needs: [extract-config]
@@ -101,7 +101,7 @@ jobs:
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
       QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
-      BUCKET_NAME: ${{ needs.extract-config.outputs.BUCKET_NAME }}
+      BUCKET_NAMES: ${{ needs.extract-config.outputs.BUCKET_NAMES }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -134,12 +134,14 @@ jobs:
       - name: Create remote backend bucket if not exists
         working-directory: IaC
         run: |
-          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "Bucket $BUCKET_NAME already exists, skipping creation."
-          else
-            echo "Bucket $BUCKET_NAME does not exist, creating..."
-            aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
-          fi
+          for BUCKET_NAME in $BUCKET_NAMES; do
+            if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+              echo "Bucket $BUCKET_NAME already exists, skipping creation."
+            else
+              echo "Bucket $BUCKET_NAME does not exist, creating..."
+              aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
+            fi
+          done
 
       - name: Terraform Infra Deployment
         working-directory: IaC
