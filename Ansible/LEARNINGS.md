@@ -106,7 +106,7 @@ bastions:
 ## 8. Running the playbook
 
 ```
-ansible-playbook -i inventory_bastions.yml jit-access.yml --limit bastions \
+ansible-playbook -i inventory_bastions.yml playbook-jit-access.yml --limit bastions \
   -e "jit_action=provision jit_username=jit_alice jit_publickey='ssh-ed25519 AAAA...'"
 ```
 

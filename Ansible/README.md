@@ -6,7 +6,7 @@ Fill in `inventory_bastions.yml` with the real `ansible_host` (IP) and
 ## Provision a lab user
 
 ```
-ansible-playbook -i inventory_bastions.yml jit-access.yml \
+ansible-playbook -i inventory_bastions.yml playbook-jit-access.yml \
   --limit bastions \
   -e "jit_action=provision jit_username=jit_alice jit_publickey='ssh-ed25519 AAAA...'"
 ```
@@ -14,7 +14,7 @@ ansible-playbook -i inventory_bastions.yml jit-access.yml \
 ## Revoke a lab user
 
 ```
-ansible-playbook -i inventory_bastions.yml jit-access.yml \
+ansible-playbook -i inventory_bastions.yml playbook-jit-access.yml \
   --limit bastions \
   -e "jit_action=revoke jit_username=jit_alice"
 ```
