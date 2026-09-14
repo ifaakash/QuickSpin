@@ -21,7 +21,8 @@
     that:
       - jit_publickey is defined
       - jit_publickey | length > 0
-    fail_msg: "jit_publickey must be set to a non-empty SSH public key"
+      - jit_publickey.startswith(('ssh-rsa', 'ssh-ed25519'))
+    fail_msg: "jit_publickey must be set to a valid SSH public key starting with 'ssh-rsa' or 'ssh-ed25519'"
     success_msg: "jit_publickey is valid"
 
 - name: Provision lab user
