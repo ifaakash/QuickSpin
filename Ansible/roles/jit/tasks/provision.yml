@@ -1,0 +1,12 @@
+---
+- name: Create lab user {{ jit_username }}
+  ansible.builtin.user:
+    name: "{{ jit_username }}"
+    create_home: true
+    state: present
+
+- name: Authorize SSH key for {{ jit_username }}
+  ansible.posix.authorized_key:
+    user: "{{ jit_username }}"
+    key: "{{ jit_publickey }}"
+    state: present
