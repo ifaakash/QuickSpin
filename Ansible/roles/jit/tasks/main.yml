@@ -23,3 +23,7 @@
       - jit_publickey | length > 0
     fail_msg: "jit_publickey must be set to a non-empty SSH public key"
     success_msg: "jit_publickey is valid"
+
+- name: Revoke lab user
+  ansible.builtin.include_tasks: revoke.yml
+  when: jit_action == 'revoke'
