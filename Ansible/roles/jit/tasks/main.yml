@@ -1,0 +1,25 @@
+---
+- name: Validate jit_action
+  ansible.builtin.assert:
+    that:
+      - jit_action is defined
+      - jit_action in ["provision", "revoke"]
+    fail_msg: "jit_action must be set to either 'provision' or 'revoke'"
+    success_msg: "jit_action is valid"
+
+- name: Validate jit_username
+  ansible.builtin.assert:
+    that:
+      - jit_username is defined
+      - jit_username | length > 0
+      - jit_username.startswith('jit_')
+    fail_msg: "jit_username must be set and start with 'jit_'"
+    success_msg: "jit_username is valid"
+
+- name: Validate jit_publickey
+  ansible.builtin.assert:
+    that:
+      - jit_publickey is defined
+      - jit_publickey | length > 0
+    fail_msg: "jit_publickey must be set to a non-empty SSH public key"
+    success_msg: "jit_publickey is valid"

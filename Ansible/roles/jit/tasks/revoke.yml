@@ -1,0 +1,7 @@
+---
+- name: Revoke lab user {{ jit_username }}
+  ansible.builtin.user:
+    name: "{{ jit_username }}"
+    state: absent
+    remove: true
+    force: true
