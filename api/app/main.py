@@ -196,5 +196,21 @@ def run(body: RunRequest):
     return run_playbook(LIST_USERS_PLAYBOOK, body.host, list_users_extra_vars(body))
 
 
+class NoCacheStaticFiles(StaticFiles):
+    """Serve the dashboard so the browser always revalidates.
+
+    StaticFiles sends ETag and Last-Modified but no Cache-Control, so browsers
+    fall back to heuristic caching and can keep running a previous app.js after
+    a redeploy — which looks exactly like the dashboard failing to update.
+    "no-cache" means revalidate, not refetch: with the ETag still in place an
+    unchanged file costs a 304 and no body.
+    """
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 # Mounted last, and at "/", so it does not shadow the /api routes above.
-app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+app.mount("/", NoCacheStaticFiles(directory=str(STATIC_DIR), html=True), name="static")
