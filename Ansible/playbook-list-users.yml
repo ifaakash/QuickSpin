@@ -1,0 +1,15 @@
+---
+# Read-only user audit. Fetches the passwd database and prints the usernames.
+# Makes no changes of any kind, so it deliberately does not become root.
+#
+#   ansible-playbook -i inventories/dashboard.ini playbook-list-users.yml \
+#     -e ansible_user=ubuntu -e list_users_target=homelab --limit moo
+#
+# Target group is explicit, never `all`. The API that calls this validates
+# list_users_target against the group list it read from the inventory.
+- name: List users on the target hosts
+  hosts: "{{ list_users_target | default('homelab') }}"
+  become: false
+  gather_facts: false
+  roles:
+    - role: list-users

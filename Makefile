@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup compile lint plan apply ansible deploy destroy clean
+.PHONY: help setup compile lint plan apply ansible api api-setup deploy destroy clean
 
 help:
 	@echo "========================================================================"
@@ -12,6 +12,8 @@ help:
 	@echo "make plan      - Compile configuration and run terraform plan"
 	@echo "make apply     - Compile configuration and apply terraform infrastructure"
 	@echo "make ansible   - Trigger Ansible playbooks to configure instances over SSM"
+	@echo "make api-setup - Create the api/ virtualenv and install FastAPI"
+	@echo "make api       - Serve the dashboard on http://127.0.0.1:8000"
 	@echo "make deploy    - Execute end-to-end flow: compile -> apply -> ansible"
 	@echo "make destroy   - Tear down deployed cloud infrastructure"
 	@echo "make clean     - Delete temporary generated files"
@@ -48,6 +50,16 @@ apply: compile
 ansible:
 	@echo "--> Executing Configuration Management via SSM..."
 	cd Ansible && export AWS_REGION=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["region"])') && export QUICKSPIN_PREFIX=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["project_prefix"])') && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventories/aws.aws_ec2.yml playbook-install-package.yml
+
+api-setup:
+	@echo "--> Creating the dashboard virtualenv..."
+	cd api && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# Bound to 127.0.0.1 on purpose. This service runs ansible against real hosts
+# and has no authentication, so it must never listen on 0.0.0.0.
+api:
+	@echo "--> Serving the dashboard on http://127.0.0.1:8000 ..."
+	cd api && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 deploy: compile
 	@echo "--> Deploying and Configuring full stack..."
