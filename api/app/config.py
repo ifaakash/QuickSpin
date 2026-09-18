@@ -13,13 +13,24 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ANSIBLE_DIR = REPO_ROOT / "Ansible"
 ANSIBLE_CFG = ANSIBLE_DIR / "ansible.cfg"
 INVENTORY_FILE = ANSIBLE_DIR / "inventories" / "dashboard.ini"
-PLAYBOOK_FILE = ANSIBLE_DIR / "playbook-list-users.yml"
+LIST_USERS_PLAYBOOK = ANSIBLE_DIR / "playbook-list-users.yml"
+JIT_PLAYBOOK = ANSIBLE_DIR / "playbook-jit-access.yml"
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 # The only values accepted for ansible_user. Anything else is rejected before
 # a command is built, so this list is the entire user-input surface.
 ALLOWED_USERS = ["root", "ubuntu"]
+
+# JIT access rules. The first three mirror roles/jit/tasks/main.yml so the UI
+# can reject instantly instead of after a two-second ansible run.
+JIT_ACTIONS = ["provision", "revoke"]
+JIT_KEY_PREFIXES = ("ssh-rsa", "ssh-ed25519")
+
+# Stricter than the role, which only checks the jit_ prefix. jit_username is
+# interpolated into task names and handed to the user module, so a value holding
+# Jinja braces would be a template injection. Pin the charset here.
+JIT_USERNAME_PATTERN = r"^jit_[a-z0-9_-]{1,28}$"
 
 # Kill a playbook that hangs, rather than holding the HTTP request forever.
 RUN_TIMEOUT_SECONDS = 300

@@ -6,6 +6,7 @@ interpreted as a shell metacharacter. Validation still happens in main.py
 before we get here, because the values also have to be real inventory entries.
 """
 
+import json
 import shlex
 import subprocess
 import time
@@ -13,23 +14,25 @@ import time
 from .config import (
     ANSIBLE_DIR,
     INVENTORY_FILE,
-    PLAYBOOK_FILE,
     RUN_TIMEOUT_SECONDS,
     ansible_env,
 )
 
 
-def build_command(group, host, user):
+def build_command(playbook, host, extra_vars):
     """Assemble the ansible-playbook argument list.
+
+    Extra vars go as ONE JSON object. This is not a style choice: `-e "a=1 b=2"`
+    defines two variables, so a value containing spaces — an SSH public key, say —
+    is silently shredded into junk. json.dumps cannot be split that way.
 
     An empty host means "every host in the group", so --limit is left off.
     """
     command = [
         "ansible-playbook",
         "-i", str(INVENTORY_FILE),
-        str(PLAYBOOK_FILE),
-        "-e", f"ansible_user={user}",
-        "-e", f"list_users_target={group}",
+        str(playbook),
+        "-e", json.dumps(extra_vars),
     ]
     if host:
         command += ["--limit", host]
@@ -58,12 +61,12 @@ def format_command(command):
     return " \\\n  ".join(lines)
 
 
-def run_playbook(group, host, user):
+def run_playbook(playbook, host, extra_vars):
     """Run the playbook and return a result dict for the dashboard.
 
     cwd is the Ansible directory so the playbook's roles/ resolve normally.
     """
-    command = build_command(group, host, user)
+    command = build_command(playbook, host, extra_vars)
     started = time.monotonic()
 
     try:
