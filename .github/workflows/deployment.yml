@@ -94,7 +94,7 @@ jobs:
       - name: Ansible Syntax Check
         working-directory: Ansible
         run: |
-          ansible-playbook --syntax-check -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+          ansible-playbook --syntax-check -i inventories/aws.aws_ec2.yml playbook-install-package.yml
 
   infra-deployment:
     # needs: [extract-config, linting]
@@ -198,8 +198,8 @@ jobs:
         working-directory: Ansible
         # possible flags are --graph, --list and --host
         run: |
-          ansible-inventory -i inventory_aws.aws_ec2.yml --list
-          ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+          ansible-inventory -i inventories/aws.aws_ec2.yml --list
+          ansible-playbook -i inventories/aws.aws_ec2.yml playbook-install-package.yml
 
       - name: List out the current folders
         run: |

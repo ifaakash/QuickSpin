@@ -1,4 +1,7 @@
 ---
+# Dynamic inventory: every running EC2 tagged Project=<prefix>.
+# Transport is SSM, so this works from CI without any network path to the host.
+# Runs in GitHub Actions. See ../README.md.
 plugin: amazon.aws.aws_ec2
 
 regions:
@@ -10,6 +13,12 @@ filters:
 
 hostnames:
   - tag:Name
+
+# Everything discovered here is an SSM-reachable cloud host.
+# Playbooks target `cloud`, never `all` — `all` would also sweep in any other
+# inventory passed on the same command line.
+groups:
+  cloud: true
 
 compose:
   ansible_connection: "'community.aws.aws_ssm'"

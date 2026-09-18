@@ -20,7 +20,7 @@ help:
 setup:
 	@echo "--> Setting up local environment..."
 	python3 -m pip install -r python/requirements.txt
-	ansible-galaxy collection install amazon.aws community.aws
+	ansible-galaxy collection install amazon.aws community.aws ansible.posix
 	cd IaC && terraform init
 
 compile:
@@ -35,7 +35,7 @@ lint:
 	terraform fmt -check IaC/
 	terraform fmt -check ../Terraform/
 	@echo "--> Checking Ansible syntax..."
-	cd Ansible && ansible-playbook --syntax-check -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+	cd Ansible && ansible-playbook --syntax-check -i inventories/aws.aws_ec2.yml playbook-install-package.yml
 
 plan: compile
 	@echo "--> Planning Infrastructure deployment..."
@@ -47,14 +47,14 @@ apply: compile
 
 ansible:
 	@echo "--> Executing Configuration Management via SSM..."
-	cd Ansible && export AWS_REGION=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["region"])') && export QUICKSPIN_PREFIX=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["project_prefix"])') && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+	cd Ansible && export AWS_REGION=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["region"])') && export QUICKSPIN_PREFIX=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["project_prefix"])') && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventories/aws.aws_ec2.yml playbook-install-package.yml
 
 deploy: compile
 	@echo "--> Deploying and Configuring full stack..."
 	cd IaC && terraform init && terraform apply -auto-approve
 	@echo "--> Waiting 60 seconds for instances and SSM agent registration..."
 	sleep 60
-	cd Ansible && export AWS_REGION=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["region"])') && export QUICKSPIN_PREFIX=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["project_prefix"])') && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventory_aws.aws_ec2.yml ansible-instruction.yml
+	cd Ansible && export AWS_REGION=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["region"])') && export QUICKSPIN_PREFIX=$$(python3 -c 'import yaml; print(yaml.safe_load(open("../quickspin.yml"))["global"]["project_prefix"])') && export ANSIBLE_CONFIG=ansible.cfg && ansible-playbook -i inventories/aws.aws_ec2.yml playbook-install-package.yml
 
 destroy:
 	@echo "--> Destroying Infrastructure..."
