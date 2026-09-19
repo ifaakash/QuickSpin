@@ -12,6 +12,17 @@ const outputBox = el("output");
 const statusBar = el("status");
 const elapsedBox = el("elapsed");
 
+const jitGroup = el("jit-group");
+const jitHost = el("jit-host");
+const jitUser = el("jit-user");
+const jitAction = el("jit-action");
+const jitUsername = el("jit-username");
+const jitPublickey = el("jit-publickey");
+const jitRunButton = el("jit-run");
+
+// Which config panel is showing. Decides what ⌘↵ and the preview act on.
+let activeTab = "run";
+
 // ---------- helpers ----------
 
 async function getJSON(url) {
@@ -53,8 +64,18 @@ function currentRequest() {
   };
 }
 
-function targetLabel() {
-  const request = currentRequest();
+function currentJitRequest() {
+  return {
+    group: jitGroup.value,
+    host: jitHost.value,
+    user: jitUser.value,
+    action: jitAction.value,
+    username: jitUsername.value.trim(),
+    publickey: jitPublickey.value.trim(),
+  };
+}
+
+function targetLabel(request) {
   return request.host || `${request.group} (all hosts)`;
 }
 
@@ -66,11 +87,18 @@ function setConnection(ok, text) {
 }
 
 function switchView(name) {
+  activeTab = name;
   for (const tab of document.querySelectorAll(".nav-tab")) {
     tab.classList.toggle("is-active", tab.dataset.view === name);
   }
-  el("view-run").hidden = name !== "run";
+  // Run and JIT share one layout and swap only the config panel.
+  el("layout").hidden = name === "inventory";
+  el("config-run").hidden = name !== "run";
+  el("config-jit").hidden = name !== "jit";
   el("view-inventory").hidden = name !== "inventory";
+
+  if (name === "run") refreshPreview();
+  if (name === "jit") refreshJitPreview();
 }
 
 function applyTheme(theme) {
@@ -94,27 +122,34 @@ function setStat(id, value, cssClass = "") {
 
 // ---------- data loading ----------
 
-async function loadGroups() {
+// Each loader takes its target <select>, so the Run and JIT panels share them.
+
+async function loadGroups(select) {
   const data = await getJSON("/api/groups");
-  fillSelect(groupSelect, data.groups.map((name) => ({ value: name, text: name })));
+  fillSelect(select, data.groups.map((name) => ({ value: name, text: name })));
   setStat("stat-groups", data.groups.length);
   return data.groups;
 }
 
-async function loadHosts(group) {
+async function loadHosts(select, group) {
   const data = await getJSON(`/api/groups/${encodeURIComponent(group)}/hosts`);
   // Empty value means no --limit, so the playbook hits the whole group.
   const options = [{ value: "", text: "All hosts in group" }];
   for (const host of data.hosts) {
     options.push({ value: host.name, text: host.label });
   }
-  fillSelect(hostSelect, options);
+  fillSelect(select, options);
   setStat("stat-hosts", data.hosts.length);
 }
 
-async function loadUsers() {
+async function loadUsers(select) {
   const data = await getJSON("/api/users");
-  fillSelect(userSelect, data.users.map((name) => ({ value: name, text: name })));
+  fillSelect(select, data.users.map((name) => ({ value: name, text: name })));
+}
+
+async function loadJitActions(select) {
+  const data = await getJSON("/api/jit/actions");
+  fillSelect(select, data.actions.map((name) => ({ value: name, text: name })));
 }
 
 // ---------- command panel ----------
@@ -122,15 +157,35 @@ async function loadUsers() {
 // Ask the API what these inputs would produce. The command string is built by
 // the same build_command() the runner uses, so the panel cannot drift from
 // what actually executes.
-async function refreshPreview() {
-  if (!groupSelect.value || !userSelect.value) return;
-
-  const { ok, body } = await postJSON("/api/preview", currentRequest());
+async function showPreview(url, request) {
+  const { ok, body } = await postJSON(url, request);
   commandBadge.textContent = "preview";
   commandBadge.className = "badge";
   commandBox.classList.add("is-stale");
   commandBox.textContent = ok ? body.command_pretty : `# rejected: ${body.detail}`;
 }
+
+async function refreshPreview() {
+  if (!groupSelect.value || !userSelect.value) return;
+  await showPreview("/api/preview", currentRequest());
+}
+
+async function refreshJitPreview() {
+  if (!jitGroup.value || !jitUser.value || !jitAction.value) return;
+  await showPreview("/api/jit/preview", currentJitRequest());
+}
+
+// Typing fires a preview per keystroke otherwise, and each one costs an
+// ansible-inventory call on the server. Wait for a pause instead.
+function debounce(fn, delay = 300) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+const refreshJitPreviewSoon = debounce(refreshJitPreview);
 
 async function copyCommand() {
   try {
@@ -224,11 +279,37 @@ function setStatus(glyph, text, cssClass) {
   statusBar.className = `status ${cssClass}`;
 }
 
+// Shared by both run flows: flip the command badge, paint status and output.
+function applyRunResult(body, target) {
+  stopElapsed(`${body.duration}s`);
+
+  // The command panel now shows what actually ran, not a preview.
+  commandBox.textContent = body.command_pretty;
+  commandBox.classList.remove("is-stale");
+  commandBadge.textContent = "executed";
+  commandBadge.className = "badge live";
+
+  const glyph = body.ok ? "✓" : "✕";
+  const word = body.ok ? "Success" : "Failed";
+  const tone = body.ok ? "ok" : "fail";
+
+  setStatus(glyph, `${word}  ·  rc=${body.returncode}  ·  ${target}`, tone);
+  setStat("stat-status", `${glyph} ${word}`, tone);
+  setStat("stat-duration", `${body.duration}s`);
+
+  let text = body.stdout;
+  if (body.stderr) {
+    text += `\n--- stderr ---\n${body.stderr}`;
+  }
+  renderOutput(text);
+  outputBox.scrollTop = 0;
+}
+
 async function runPlaybook() {
   if (runButton.disabled) return;
 
   const request = currentRequest();
-  const target = targetLabel();
+  const target = targetLabel(request);
 
   runButton.disabled = true;
   runButton.classList.add("is-busy");
@@ -249,28 +330,7 @@ async function runPlaybook() {
       return;
     }
 
-    stopElapsed(`${body.duration}s`);
-
-    // The command panel now shows what actually ran, not a preview.
-    commandBox.textContent = body.command_pretty;
-    commandBox.classList.remove("is-stale");
-    commandBadge.textContent = "executed";
-    commandBadge.className = "badge live";
-
-    const glyph = body.ok ? "✓" : "✕";
-    const word = body.ok ? "Success" : "Failed";
-    const tone = body.ok ? "ok" : "fail";
-
-    setStatus(glyph, `${word}  ·  rc=${body.returncode}  ·  ${target}`, tone);
-    setStat("stat-status", `${glyph} ${word}`, tone);
-    setStat("stat-duration", `${body.duration}s`);
-
-    let text = body.stdout;
-    if (body.stderr) {
-      text += `\n--- stderr ---\n${body.stderr}`;
-    }
-    renderOutput(text);
-    outputBox.scrollTop = 0;
+    applyRunResult(body, target);
   } catch (error) {
     stopElapsed("");
     setStatus("✕", `Request failed: ${error.message}`, "fail");
@@ -280,6 +340,61 @@ async function runPlaybook() {
     runButton.classList.remove("is-busy");
     el("run-label").textContent = "Run playbook";
   }
+}
+
+// Revoke deletes the account and its home directory, so make it deliberate.
+function confirmRevoke(request, target) {
+  return window.confirm(
+    `Revoke ${request.username} on ${target}?\n\n` +
+    "This deletes the account and its home directory on the target host. " +
+    "There is no undo."
+  );
+}
+
+async function runJit() {
+  if (jitRunButton.disabled) return;
+
+  const request = currentJitRequest();
+  const target = targetLabel(request);
+
+  if (request.action === "revoke" && !confirmRevoke(request, target)) return;
+
+  jitRunButton.disabled = true;
+  jitRunButton.classList.add("is-busy");
+  el("jit-run-label").textContent = "Running";
+  setStatus("◌", `${request.action} ${request.username} on ${target}`, "");
+  renderPlain("Waiting for ansible to finish...");
+  startElapsed();
+
+  try {
+    const { ok, body } = await postJSON("/api/jit/run", request);
+
+    if (!ok) {
+      stopElapsed("");
+      setStatus("✕", `Rejected: ${body.detail}`, "fail");
+      renderPlain(body.detail, "ln ln-fail");
+      setStat("stat-status", "Rejected", "fail");
+      setStat("stat-duration", "—");
+      return;
+    }
+
+    applyRunResult(body, target);
+  } catch (error) {
+    stopElapsed("");
+    setStatus("✕", `Request failed: ${error.message}`, "fail");
+    renderPlain(error.message, "ln ln-fail");
+  } finally {
+    jitRunButton.disabled = false;
+    jitRunButton.classList.remove("is-busy");
+    el("jit-run-label").textContent = "Run playbook";
+  }
+}
+
+// The key field only matters for provision — revoke.yml never reads it.
+function syncJitAction() {
+  const revoking = jitAction.value === "revoke";
+  el("jit-key-field").hidden = revoking;
+  el("jit-warn").hidden = !revoking;
 }
 
 // ---------- inventory view ----------
@@ -313,12 +428,27 @@ async function loadInventoryTable(groups) {
 // ---------- wiring ----------
 
 groupSelect.addEventListener("change", async () => {
-  await loadHosts(groupSelect.value);
+  await loadHosts(hostSelect, groupSelect.value);
   refreshPreview();
 });
 hostSelect.addEventListener("change", refreshPreview);
 userSelect.addEventListener("change", refreshPreview);
 runButton.addEventListener("click", runPlaybook);
+
+jitGroup.addEventListener("change", async () => {
+  await loadHosts(jitHost, jitGroup.value);
+  refreshJitPreview();
+});
+jitHost.addEventListener("change", refreshJitPreview);
+jitUser.addEventListener("change", refreshJitPreview);
+jitAction.addEventListener("change", () => {
+  syncJitAction();
+  refreshJitPreview();
+});
+// Text fields are debounced; the selects above fire immediately.
+jitUsername.addEventListener("input", refreshJitPreviewSoon);
+jitPublickey.addEventListener("input", refreshJitPreviewSoon);
+jitRunButton.addEventListener("click", runJit);
 el("copy").addEventListener("click", copyCommand);
 el("theme-toggle").addEventListener("click", toggleTheme);
 
@@ -326,7 +456,8 @@ el("theme-toggle").addEventListener("click", toggleTheme);
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
     event.preventDefault();
-    runPlaybook();
+    if (activeTab === "jit") runJit();
+    else if (activeTab === "run") runPlaybook();
   }
 });
 
@@ -340,11 +471,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyTheme(saved || (prefersDark ? "dark" : "light"));
 
   try {
-    const groups = await loadGroups();
-    await loadUsers();
+    const groups = await loadGroups(groupSelect);
+    await loadGroups(jitGroup);
+    await loadUsers(userSelect);
+    await loadUsers(jitUser);
+    await loadJitActions(jitAction);
     if (groupSelect.value) {
-      await loadHosts(groupSelect.value);
+      await loadHosts(hostSelect, groupSelect.value);
+      await loadHosts(jitHost, jitGroup.value);
     }
+    syncJitAction();
     await loadInventoryTable(groups);
     setConnection(true, "inventory loaded");
     refreshPreview();

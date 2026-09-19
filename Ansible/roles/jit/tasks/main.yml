@@ -24,6 +24,8 @@
       - jit_publickey.startswith(('ssh-rsa', 'ssh-ed25519'))
     fail_msg: "jit_publickey must be set to a valid SSH public key starting with 'ssh-rsa' or 'ssh-ed25519'"
     success_msg: "jit_publickey is valid"
+  # revoke.yml never reads the key, so demanding one made revoke impossible.
+  when: jit_action == 'provision'
 
 - name: Provision lab user
   ansible.builtin.include_tasks: provision.yml

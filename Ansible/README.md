@@ -79,6 +79,33 @@ ansible-playbook -i inventories/bastions.yml playbook-jit-access.yml \
 
 `jit_username` must start with `jit_`, and `jit_publickey` must be `ssh-rsa` or
 `ssh-ed25519` — see `roles/jit/tasks/main.yml` for the full validation.
+`jit_publickey` is only required for `provision`; `revoke` does not read it.
+
+### The quotes around the public key are load-bearing
+
+`-e "a=1 b=2"` defines **two** variables. A public key contains spaces, so an
+unquoted one is shredded — and it fails silently:
+
+```
+-e jit_publickey=ssh-ed25519 AAAAC3...key/with=pad me@mac
+
+parses as: jit_publickey        = "ssh-ed25519"      <- only the algorithm
+           AAAAC3...key/with    = "pad"              <- a junk variable
+           _raw_params          = "me@mac"
+```
+
+The role's `startswith('ssh-ed25519')` assert then **passes** on that truncated
+value, so the run goes green while writing a broken `authorized_keys` entry.
+Always single-quote the key as shown above. Anything calling this
+programmatically should pass one JSON object instead, which cannot be split:
+
+```bash
+ansible-playbook -i inventories/dashboard.ini playbook-jit-access.yml \
+  -e '{"jit_target": "homelab", "jit_action": "provision",
+       "jit_username": "jit_alice", "jit_publickey": "ssh-ed25519 AAAA... me@mac"}'
+```
+
+That is what the dashboard in `../api/` does.
 
 ## List users
 

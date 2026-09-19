@@ -20,6 +20,7 @@
 
     <div class="nav-tabs" role="tablist">
       <button class="nav-tab is-active" data-view="run" role="tab">Run</button>
+      <button class="nav-tab" data-view="jit" role="tab">JIT Access</button>
       <button class="nav-tab" data-view="inventory" role="tab">Inventory</button>
     </div>
 
@@ -56,11 +57,11 @@
       </div>
     </section>
 
-    <!-- ============ RUN VIEW ============ -->
-    <section class="view" id="view-run">
-      <div class="layout">
+    <!-- Run and JIT swap only the left panel. Command and Output are one
+         shared instance, so switching tabs keeps the last result on screen. -->
+    <div class="layout" id="layout">
 
-        <aside class="panel panel-config">
+        <aside class="panel panel-config" id="config-run">
           <div class="panel-head">
             <h2>Configuration</h2>
           </div>
@@ -84,6 +85,52 @@
             <button id="run" class="run-button">
               <span class="spinner" aria-hidden="true"></span>
               <span id="run-label">Run playbook</span>
+            </button>
+            <p class="hint">or press <kbd>⌘</kbd><kbd>↵</kbd></p>
+          </div>
+        </aside>
+
+        <aside class="panel panel-config" id="config-jit" hidden>
+          <div class="panel-head">
+            <h2>JIT access</h2>
+          </div>
+          <div class="panel-body">
+            <div class="field">
+              <label for="jit-group">Group</label>
+              <select id="jit-group"></select>
+            </div>
+            <div class="field">
+              <label for="jit-host">Host</label>
+              <select id="jit-host"></select>
+            </div>
+            <div class="field">
+              <label for="jit-user">Run as</label>
+              <select id="jit-user"></select>
+            </div>
+            <div class="field">
+              <label for="jit-action">Action</label>
+              <select id="jit-action"></select>
+            </div>
+            <div class="field">
+              <label for="jit-username">JIT username</label>
+              <input type="text" id="jit-username" placeholder="jit_alice"
+                     autocomplete="off" spellcheck="false">
+            </div>
+            <div class="field" id="jit-key-field">
+              <label for="jit-publickey">Public key</label>
+              <textarea id="jit-publickey" rows="4" spellcheck="false"
+                        placeholder="ssh-ed25519 AAAAC3... you@laptop"></textarea>
+            </div>
+            <p class="warn-note" id="jit-warn" hidden>
+              Revoke deletes the account and its home directory. There is no undo.
+            </p>
+            <div class="field">
+              <label>Playbook</label>
+              <div class="static-value">playbook-jit-access.yml</div>
+            </div>
+            <button id="jit-run" class="run-button">
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="jit-run-label">Run playbook</span>
             </button>
             <p class="hint">or press <kbd>⌘</kbd><kbd>↵</kbd></p>
           </div>
@@ -113,8 +160,7 @@
           </section>
 
         </div>
-      </div>
-    </section>
+    </div>
 
     <!-- ============ INVENTORY VIEW ============ -->
     <section class="view" id="view-inventory" hidden>

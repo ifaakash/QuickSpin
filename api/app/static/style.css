@@ -51,6 +51,12 @@
 
 * { box-sizing: border-box; }
 
+/* The UA's [hidden] { display: none } loses to any author display rule, and
+   .layout sets display: grid — so toggling the hidden attribute on it silently
+   did nothing. Author !important beats normal author declarations, which makes
+   the hidden attribute reliable everywhere it is used. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -295,7 +301,9 @@ body {
   color: var(--ink-2);
 }
 
-select {
+select,
+input[type="text"],
+textarea {
   width: 100%;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border-strong);
@@ -305,7 +313,20 @@ select {
   font: inherit;
 }
 
-select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+select:focus,
+input[type="text"]:focus,
+textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+input[type="text"],
+textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+textarea { resize: vertical; line-height: 1.45; }
+
+input::placeholder,
+textarea::placeholder { color: var(--ink-3); }
 
 .static-value {
   padding: 0.5rem 0.6rem;
@@ -486,3 +507,14 @@ kbd {
 .output .ln-dim     { color: var(--out-dim); }
 
 .empty { color: var(--ink-3); font-style: italic; }
+
+/* Caption under the JIT form when revoke is selected. Paired with the word
+   "Revoke" in the button flow, so it never relies on colour alone. */
+.warn-note {
+  margin: -0.3rem 0 0.9rem;
+  padding: 0.5rem 0.6rem;
+  border-left: 2px solid var(--critical);
+  background: var(--surface-2);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}

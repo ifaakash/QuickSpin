@@ -47,6 +47,9 @@ api/
 | `GET /api/groups/{group}/hosts` | `{"hosts": [{"name": "moo", "ip": "100.76.6.76", "label": "moo (100.76.6.76)"}]}` |
 | `GET /api/users` | `{"users": ["root", "ubuntu"]}` |
 | `POST /api/preview` | `{command, command_pretty}` — builds the command without running it |
+| `GET /api/jit/actions` | `{"actions": ["provision", "revoke"]}` |
+| `POST /api/jit/preview` | same two forms, for the JIT playbook |
+| `POST /api/jit/run` | runs `playbook-jit-access.yml` |
 | `POST /api/run` | `{ok, returncode, command, command_pretty, stdout, stderr, duration}` |
 
 `POST /api/run` body: `{"group": "homelab", "host": "moo", "user": "ubuntu"}`.
@@ -125,6 +128,62 @@ JavaScript.
 the third signal, not the only one — this is what keeps it readable for colour
 vision deficiency and in print.
 
+## JIT access (added 2026-09-19)
+
+A second tab drives `Ansible/playbook-jit-access.yml`. It takes the same target
+fields plus an action (`provision` / `revoke`), a JIT username, and an SSH public
+key. Command, Output and the stat tiles are one shared instance — the tabs swap
+only the left config panel.
+
+Two defects had to be fixed first, or the feature would have been silently broken.
+
+### Defect 1 — `-e key=value` destroys SSH public keys
+
+`-e "a=1 b=2"` defines **two** variables. A public key contains spaces. Verified
+against `ansible.parsing.splitter.parse_kv`:
+
+```
+INPUT   : jit_publickey=ssh-ed25519 AAAAC3...key/with=pad me@mac
+parse_kv: {'jit_publickey': 'ssh-ed25519',       <- only the algorithm
+           'AAAAC3...key/with': 'pad',           <- junk variable
+           '_raw_params': 'me@mac'}
+```
+
+It does not error, and the role's `startswith('ssh-ed25519')` assert then **passes**
+on that truncated value — so the run goes green while writing a broken
+`authorized_keys` entry.
+
+Fix: `build_command()` now passes **all** extra vars as one `json.dumps` object,
+for both playbooks. Proven end to end — after a provision run,
+`cat /home/jit_alice/.ssh/authorized_keys` on the host returned the key complete
+with its spaces, `+`, `/`, `=` padding and comment.
+
+### Defect 2 — revoke was impossible
+
+`roles/jit/tasks/main.yml` asserted `jit_publickey` with no `when:` guard, but
+`revoke.yml` never reads the key, so the revoke command documented in
+`Ansible/README.md` failed that assert. Fixed with
+`when: jit_action == 'provision'`. A revoke run now shows `skipping: [moo]` on
+that task.
+
+### Validation beyond what the role checks
+
+`validate_jit()` mirrors the role's asserts so bad input is rejected instantly
+rather than after a two-second ansible run, and adds two rules the role lacks:
+
+- **Username charset** `^jit_[a-z0-9_-]{1,28}$`. The role only checks the `jit_`
+  prefix, but `jit_username` is interpolated into task names and handed to the
+  `user` module, so Jinja braces in it would be a **template injection**. No shell
+  is involved, so this is an Ansible-level risk, not a shell one.
+- **Public key must be single-line.** `authorized_key` treats a multi-line value as
+  several keys, so an embedded newline could smuggle in a second unaudited key.
+
+### Revoke is guarded
+
+`user: state=absent remove=true force=true` deletes the account *and its home
+directory* with no undo, so the UI raises a `confirm()` naming the user and host
+before a revoke. Provision runs without a prompt.
+
 ## Why these decisions
 
 **`ansible-inventory --list` instead of parsing the INI.** The INI cannot be read
@@ -184,11 +243,12 @@ tailnet — `100.76.6.76` is a Tailscale CGNAT address and is unroutable otherwi
 
 - **`root` will fail against `moo`.** Ubuntu disables root SSH login by default.
   The option exists because it was asked for; read the failure as correct.
-- **The `ubuntu` key is not on `moo` yet.** As of this build, a run returns
-  `UNREACHABLE! ... Permission denied (publickey,password)`. SSH connects and
-  offers `~/.ssh/id_ed25519`, and the Pi rejects it — the public key is not in
-  `~ubuntu/.ssh/authorized_keys` on the host. Fix with `ssh-copy-id` from a
-  session that can already log in. This is a host config gap, not an API bug.
+- **`moo` accepts the key as of 2026-09-19.** This was blocked at first build.
+  Both playbooks now run green against it — a JIT provision returns
+  `ok=6 changed=2 unreachable=0`.
+- **`playbook-jit-access.yml` sets `become: true`,** so the run-as user needs
+  passwordless sudo on the target. `dashboard.ini` sets no `ansible_become`,
+  unlike `static.ini`.
 - **You cannot smoke-test this against localhost on macOS.** There is no `getent`
   binary on Darwin, so the task fails with
   `Failed to find required executable "getent"`. The role needs a Linux target.
