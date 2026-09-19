@@ -1,0 +1,4 @@
+---
+- name: Ping the machine
+  ansible.builtin.ping:
+    data: "{{ data_value }}"

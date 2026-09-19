@@ -1,0 +1,7 @@
+---
+- name: Ping the machine
+  hosts: homelab
+  become: false
+  gather_facts: false
+  roles:
+    - role: ping
