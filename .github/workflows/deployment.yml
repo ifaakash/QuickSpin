@@ -17,11 +17,6 @@ on:
         type: boolean
         default: false
         required: false
-      run_plan_as_destroy:
-        description: Run plan as destory?
-        type: boolean
-        default: false
-        required: false
 
 permissions:
   id-token: write
@@ -41,7 +36,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-      
+
       - name: Extract Global Variables
         id: extract
         run: |
@@ -151,8 +146,7 @@ jobs:
         run: |
           terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
-          # terraform apply --auto-approve tfplan
-          terraform destroy --auto-approve
+          terraform apply --auto-approve tfplan
 
   configuration-management:
     needs: [extract-config, infra-deployment]
@@ -198,7 +192,7 @@ jobs:
         working-directory: Ansible
         # possible flags are --graph, --list and --host
         run: |
-          ansible-inventory -i inventories/aws.aws_ec2.yml --list
+          ansible-inventory -i inventories/aws.aws_ec2.yml --graph
           ansible-playbook -i inventories/aws.aws_ec2.yml playbook-install-package.yml
 
       - name: List out the current folders
@@ -212,9 +206,26 @@ jobs:
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
       QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
+      BUCKET_NAMES: ${{ needs.extract-config.outputs.BUCKET_NAMES }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Install python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r python/requirements.txt
+
+      - name: Convert YAML -> TFVARS.JSON
+        working-directory: python
+        run: |
+          python yaml-to-json.py | tee terraform.tfvars.json
+          mv terraform.tfvars.json ../IaC/
+          echo "tfvars=$(cat ../IaC/terraform.tfvars.json | jq -c .)" >> $GITHUB_OUTPUT
 
       - name: Connect to Cloud Provider
         uses: aws-actions/configure-aws-credentials@v5.0.0
@@ -225,7 +236,19 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Destroy Infra
+      - name: Create remote backend bucket if not exists
+        working-directory: IaC
+        run: |
+          for BUCKET_NAME in $BUCKET_NAMES; do
+            if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+              echo "Bucket $BUCKET_NAME already exists, skipping creation."
+            else
+              echo "Bucket $BUCKET_NAME does not exist, creating..."
+              aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
+            fi
+          done
+
+      - name: Terraform Infra Deployment
         working-directory: IaC
         run: |
           terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
