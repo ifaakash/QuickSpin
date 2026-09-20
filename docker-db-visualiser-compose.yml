@@ -1,0 +1,8 @@
+services:
+  db-visualise:
+    container_name: whodb
+    image: clidey/whodb
+    ports:
+      - "8199:8080"
+    volumes:
+      - "./api/:/db"
