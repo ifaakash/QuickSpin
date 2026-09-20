@@ -15,7 +15,6 @@ RUN pip install --no-cache-dir -r api/requirements.txt
 
 COPY Ansible ./Ansible
 COPY api ./api
-COPY id_ed25519 ./id_ed25519
 
 EXPOSE 8000
 

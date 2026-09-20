@@ -1,0 +1,9 @@
+---
+- name: Ping the localhost over mac
+  gather_facts: false
+  become: false
+  hosts: all
+  tasks:
+   - name: Ping the localhost 
+     ansible.builtin.ping:
+        data: "ok"
