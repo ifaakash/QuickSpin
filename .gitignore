@@ -41,3 +41,4 @@ cladue-context
 api/.venv/
 __pycache__/
 *.pyc
+*claude-context*

@@ -1,0 +1,17 @@
+# Build context is the repo root (docker build -f api/Dockerfile .), so this
+# file has to live here. A .dockerignore inside api/ is never read, which is
+# how a 38MB host .venv ended up in the image.
+
+**/.venv/
+**/__pycache__/
+**/*.pyc
+
+.git/
+.gitignore
+
+# Runtime sidecars. SQLite recreates these; a stale one from the host is worse
+# than none, since it describes a database state the image does not have.
+api/devopshub.db-shm
+api/devopshub.db-wal
+
+personal-notes/
