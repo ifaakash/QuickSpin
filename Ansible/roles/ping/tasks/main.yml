@@ -15,6 +15,7 @@
   ansible.builtin.shell: |
     echo "Using tags to run this task"
     echo "List the home directory"
+    echo "Printing the password stored in vault {{ password }}"
     ls /home/
   tags:
      - shell

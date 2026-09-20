@@ -2,6 +2,12 @@
 - name: Ping the machine
   hosts: homelab
   become: false
+  # serial:
+  #     - 1      # Update the first machine as a "canary" test
+  #     - 50%    # Then update half of the remaining machines
+  #     - 100%   # Then update the rest
+  vars_files:
+   -  group_vars/secrets.yml
   gather_facts: false
   roles:
     - role: ping
