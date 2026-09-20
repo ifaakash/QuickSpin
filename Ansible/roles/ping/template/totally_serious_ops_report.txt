@@ -18,4 +18,4 @@ It turned out to be {{ actual_cause }}.
 
 Final verdict:
 {{ final_verdict }}
-Probably.
+Probably

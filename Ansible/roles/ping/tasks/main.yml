@@ -8,4 +8,15 @@
     src: ../template/totally_serious_ops_report.txt
     dest: /home/ubuntu/QuickSpin/test/totally_serious_ops_report.txt
     # validate:
-    backup: yes 
+    backup: yes
+
+# Can only be validate directly over docker container if the connection type changes to docker
+# and inventory list the connection to docker conatiner directly
+# The nginx config file will be in the template directory
+
+# - name: Exec to nginx container and replace the nginx config file
+#   ansible.builtin.template:
+#     src: ../template/nginx.conf
+#     dest: /etc/nginx/nginx.conf
+#     backup: yes
+#     validate: nginx -t
