@@ -9,6 +9,15 @@
     dest: /home/ubuntu/QuickSpin/test/totally_serious_ops_report.txt
     # validate:
     backup: yes
+  notify: Just say hi via shell
+
+- name: Using tags to run this task
+  ansible.builtin.shell: |
+    echo "Using tags to run this task"
+    echo "List the home directory"
+    ls /home/
+  tags:
+     - shell
 
 # Can only be validate directly over docker container if the connection type changes to docker
 # and inventory list the connection to docker conatiner directly

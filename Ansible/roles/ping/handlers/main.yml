@@ -1,0 +1,7 @@
+---
+- name: Just say hi via shell
+  ansible.builtin.shell: |
+      echo "Hi - from shell"
+      docker ps
+  # report false; shell collection report changed: true by default
+  changed_when: false
