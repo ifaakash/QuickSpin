@@ -1,0 +1,21 @@
+Welcome to the Totally Serious Operations Report
+
+Operator: {{ operator_name }}
+Favorite emergency snack: {{ emergency_snack }}
+Server status: {{ server_status }}
+Critical number: {{ critical_number }}
+
+Today's observations:
+- The coffee machine has achieved higher uptime than {{ environment_name }}.
+- One container restarted because it "{{ container_excuse }}."
+- DNS worked on the first try. {{ dns_reaction }}
+- A developer said, "{{ developer_quote }}" The machine is now under investigation.
+- Kubernetes added {{ yaml_count }} more YAML files while nobody was looking.
+
+Incident summary:
+At {{ incident_time }}, the production server made a weird noise.
+It turned out to be {{ actual_cause }}.
+
+Final verdict:
+{{ final_verdict }}
+Probably.

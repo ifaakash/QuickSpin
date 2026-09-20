@@ -2,3 +2,10 @@
 - name: Ping the machine
   ansible.builtin.ping:
     data: "{{ data_value }}"
+
+- name: Replace the serious stuff
+  ansible.builtin.template:
+    src: ../template/totally_serious_ops_report.txt
+    dest: /home/ubuntu/QuickSpin/test/totally_serious_ops_report.txt
+    # validate:
+    backup: yes 
