@@ -18,6 +18,11 @@ JIT_PLAYBOOK = ANSIBLE_DIR / "playbook-jit-access.yml"
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
+# The jobs and grants database. Nothing else in this API reads or writes it yet
+# — the persistence layer that does lives on feat/devopshub-dashboard — but
+# /healthz probes it so the check has a real dependency that can actually fail.
+DB_PATH = REPO_ROOT / "api" / "devopshub.db"
+
 # The only values accepted for ansible_user. Anything else is rejected before
 # a command is built, so this list is the entire user-input surface.
 ALLOWED_USERS = ["root", "ubuntu"]
@@ -37,6 +42,10 @@ RUN_TIMEOUT_SECONDS = 300
 
 # ansible-inventory only reads a file, so it gets a much shorter leash.
 INVENTORY_TIMEOUT_SECONDS = 30
+
+# A health check must answer or fail fast, never queue behind a writer holding
+# the database lock. Two seconds is long enough to ride out a normal commit.
+HEALTH_DB_TIMEOUT_SECONDS = 2
 
 
 def ansible_env():

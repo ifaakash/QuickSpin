@@ -8,10 +8,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from contextlib import closing
 import re
+import sqlite3
 
 from .config import (
     ALLOWED_USERS,
+    DB_PATH,
+    HEALTH_DB_TIMEOUT_SECONDS,
     JIT_ACTIONS,
     JIT_KEY_PREFIXES,
     JIT_PLAYBOOK,
@@ -194,6 +198,52 @@ def run(body: RunRequest):
     """Validate every field, then run the playbook and return its output."""
     validate_target(body)
     return run_playbook(LIST_USERS_PLAYBOOK, body.host, list_users_extra_vars(body))
+
+
+@app.get("/healthz")
+def healthz():
+    """Report ok only if the database is actually readable.
+
+    The point of a health check is that it can fail. Returning a literal
+    {"status": "ok"} proves the process accepted a socket and nothing else, so
+    this opens the database and reads from both tables instead.
+
+    Two details make the difference between a real check and a tautology:
+
+    mode=ro
+        sqlite3.connect() on a plain path CREATES a missing database and
+        succeeds. A probe written that way can never report a missing file — it
+        manufactures an empty one and calls it healthy. The read-only URI raises
+        instead, and never mutates the file it is inspecting.
+
+    SELECT count(*)
+        connect() is lazy and does no I/O until a statement runs, so a corrupt
+        file opens cleanly. Touching both tables forces the read and also
+        catches schema drift, not just a missing or unreadable file.
+
+    Known cost of mode=ro: the database is in WAL mode, and WAL readers need to
+    create a -shm sidecar, so an unwritable directory fails the check even
+    though the file is intact. That is reported as unhealthy on purpose — a
+    directory this service cannot write is one it cannot record a job into.
+    """
+    try:
+        with closing(
+            sqlite3.connect(
+                f"file:{DB_PATH}?mode=ro",
+                uri=True,
+                timeout=HEALTH_DB_TIMEOUT_SECONDS,
+            )
+        ) as connection:
+            jobs = connection.execute("SELECT count(*) FROM jobs").fetchone()[0]
+            grants = connection.execute("SELECT count(*) FROM grants").fetchone()[0]
+    except (sqlite3.Error, OSError) as error:
+        # 503, not 500: the service is up but a dependency is not, which is
+        # what tells a load balancer to stop sending traffic.
+        raise HTTPException(
+            status_code=503, detail=f"database unavailable: {error}"
+        )
+
+    return {"status": "ok", "database": str(DB_PATH), "jobs": jobs, "grants": grants}
 
 
 class NoCacheStaticFiles(StaticFiles):
