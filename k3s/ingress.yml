@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devopshub-ingress
+spec:
+  rules:
+  - host: devopshub.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: devopshub-svc
+            port:
+              number: 80
