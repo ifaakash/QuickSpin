@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devopshub-deployment
+  labels:
+    deployment: devopshub
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: devopshub
+  template:
+    metadata:
+      labels:
+        app: devopshub
+    spec:
+      containers:
+        - name: devopshub
+          image: docker.io/library/devopshub:v1
+          imagePullPolicy: Never
+          ports:
+           - containerPort: 8000

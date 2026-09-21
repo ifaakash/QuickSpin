@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: devopshub-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: devopshub
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
