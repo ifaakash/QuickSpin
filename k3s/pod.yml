@@ -2,11 +2,11 @@ apiVersion: v1
 kind: Pod
 metadata:
  name: devopshub
- label:
+ labels:
    app: devopshub
 spec:
   containers:
     - name: devopshub-portal
       image: devopshub:v1
       ports:
-        - containerPort: 7989
+        - containerPort: 8000
