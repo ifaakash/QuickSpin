@@ -23,3 +23,12 @@ spec:
           envFrom:
            - configMapRef:
                 name: devopshub-config
+         volumeMounts:
+           - name: ssh-key-volume
+             mountPath: "/secrets"
+             readOnly: true
+      volumes:
+        - name: ssh-key-volume
+          secret:
+            secretName: homelab-ssh-key
+            defaultMode: 0400
