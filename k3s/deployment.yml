@@ -20,3 +20,6 @@ spec:
           imagePullPolicy: Never
           ports:
            - containerPort: 8000
+          envFrom:
+           - configMapRef:
+                name: devopshub-config
