@@ -93,7 +93,7 @@ jobs:
   infra-deployment:
     # needs: [extract-config, linting]
     needs: [extract-config]
-    if: github.event.inputs.destroy_infra != 'true' || github.event.inputs.destroy_infra == 'true'
+    if: github.event.inputs.destroy_infra != 'true'
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
