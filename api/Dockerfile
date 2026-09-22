@@ -9,6 +9,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir ansible-core
+RUN ansible-galaxy collection install ansible.posix
 
 COPY api/requirements.txt ./api/requirements.txt
 RUN pip install --no-cache-dir -r api/requirements.txt
