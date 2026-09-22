@@ -156,22 +156,30 @@ async function loadUsers(select) {
 
 // Empty value means no --private-key, so ssh keeps its normal behaviour of
 // trying the agent and whatever ansible.cfg points at.
+//
+// The option value is the key's full path, not its filename: keys come from
+// several directories now, and two mounts can hold a "homelab" apiece. The
+// label carries the directory for the same reason.
 async function loadKeys(select, noteId) {
   const data = await getJSON("/api/ssh-keys");
   const options = [{ value: "", text: "Default (ssh-agent / ansible.cfg)" }];
   for (const key of data.keys) {
+    const where = `${key.name}  ·  ${key.directory}`;
     options.push({
-      value: key.name,
-      text: key.encrypted ? `${key.name} — encrypted, use ssh-agent` : key.name,
+      value: key.path,
+      text: key.encrypted ? `${where}  — encrypted, use ssh-agent` : where,
       disabled: key.encrypted,
     });
   }
   fillSelect(select, options);
 
+  // Name the directories that exist, so an empty dropdown is obviously a
+  // missing mount rather than a broken endpoint.
+  const present = data.directories.filter((d) => d.exists).map((d) => d.path);
   const usable = data.keys.filter((key) => !key.encrypted).length;
   el(noteId).textContent = data.keys.length
-    ? `${usable} of ${data.keys.length} usable in ${data.directory}`
-    : `no private keys found in ${data.directory}`;
+    ? `${usable} of ${data.keys.length} usable · searched ${present.join(", ")}`
+    : `no private keys in ${present.join(", ") || "any configured directory"}`;
 }
 
 async function loadJitActions(select) {

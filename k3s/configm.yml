@@ -4,6 +4,8 @@ metadata:
   name: devopshub-config
 data:
   INVENTORY_FILE_NAME: "homelab.ini"
-  # Where the homelab-ssh-key Secret is mounted, so /api/ssh-keys reads the
-  # Secret rather than a ~/.ssh that does not exist in the pod.
-  SSH_KEY_DIR: "/secrets"
+  # Directories searched for private keys, colon-separated like PATH. /secrets
+  # is where the homelab-ssh-key Secret is mounted; /root/.ssh is listed too so
+  # a key baked into the image or bind-mounted still appears. Missing
+  # directories are skipped.
+  SSH_KEY_DIRS: "/secrets:/root/.ssh"

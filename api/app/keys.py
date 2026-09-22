@@ -2,29 +2,30 @@
 
 Everything else that reaches the ansible-playbook argv in this service is
 checked against an allowlist first — ALLOWED_USERS for the remote user, the
-parsed inventory for group and host. A private key path is no different, so it
-gets the same treatment: the directory is fixed by config, the keys in it are
-discovered by reading them, and a request may only name one that is already
-there. A caller never supplies a path.
+parsed inventory for group and host. A private key is no different: the
+directories are fixed by config, the keys in them are discovered by reading
+them, and a request may only name a key that is already there.
 
-That distinction is the whole point. Accepting a path from the browser would let
-any file on the host be fed to --private-key, and ansible echoes the paths it
-was given back into its error output.
+Several directories are searched, in order, so a laptop's ~/.ssh and a mounted
+Secret can both feed the same dropdown. Keys are identified to the API by their
+absolute path rather than their bare filename, because two mounts can easily
+hold a key of the same name and silently shadowing one of them would be worse
+than making the caller say which it means.
 """
 
 import base64
 import struct
 
-from .config import SSH_KEY_DIR
+from .config import SSH_KEY_DIRS
 
 # Private keys are identified by reading them, not by their filename. Keys get
 # named anything (id_ed25519, homelab, deploy_key), while known_hosts, config
-# and *.pub all sit in the same directory and must never be offered.
+# and *.pub all sit in the same directories and must never be offered.
 PEM_START = "-----BEGIN "
 PEM_PRIVATE = "PRIVATE KEY"
 
-# Keys are a few KB at most. Cap the read so a stray large file in ~/.ssh cannot
-# be slurped into memory just to answer a dropdown.
+# Keys are a few KB at most. Cap the read so a stray large file in a mounted
+# directory cannot be slurped into memory just to answer a dropdown.
 MAX_KEY_BYTES = 64 * 1024
 
 
@@ -64,7 +65,7 @@ def _openssh_cipher(body):
 
 
 def _inspect(path):
-    """Return {"name", "encrypted"} for a private key, or None if it is not one."""
+    """Return a key entry for a private key file, or None if it is not one."""
     try:
         if not path.is_file():
             return None
@@ -87,35 +88,79 @@ def _inspect(path):
         # with a Proc-Type header instead of an inner cipher name.
         encrypted = "ENCRYPTED" in text[:400]
 
-    return {"name": path.name, "encrypted": encrypted}
+    return {
+        "name": path.name,
+        "path": str(path),
+        "directory": str(path.parent),
+        "encrypted": encrypted,
+    }
 
 
 def list_keys():
-    """Every usable private key in SSH_KEY_DIR, sorted by name.
+    """Every usable private key across SSH_KEY_DIRS, in directory order.
 
-    Reads the directory on each call rather than caching, for the same reason
-    the inventory is re-read on each request: a key added or removed on disk
-    must show up without restarting the service.
+    The directories are re-read on each call rather than cached, for the same
+    reason the inventory is re-read on each request: a key added, removed or
+    remounted must show up without restarting the service. That matters more
+    here than for the inventory, since a Secret can be rotated under a running
+    pod.
+
+    A directory that does not exist is skipped, not an error. One list of
+    candidate locations is meant to cover a laptop and a pod alike, so most of
+    the entries are expected to be absent in any given environment.
     """
-    if not SSH_KEY_DIR.is_dir():
-        return []
-
     keys = []
-    for path in sorted(SSH_KEY_DIR.iterdir()):
-        found = _inspect(path)
-        if found:
-            keys.append(found)
+    seen = set()
+    for directory in SSH_KEY_DIRS:
+        try:
+            if not directory.is_dir():
+                continue
+            entries = sorted(directory.iterdir())
+        except OSError:
+            continue
+
+        for path in entries:
+            found = _inspect(path)
+            # The same directory can be named twice in the env var, or reached
+            # through a symlink; list each real key once.
+            if found and found["path"] not in seen:
+                seen.add(found["path"])
+                keys.append(found)
     return keys
 
 
-def resolve_key(name):
-    """Map a key name to its absolute path, or None if it is not on offer.
+def list_directories():
+    """The configured search paths, with whether each is actually present."""
+    return [
+        {"path": str(directory), "exists": directory.is_dir()}
+        for directory in SSH_KEY_DIRS
+    ]
 
-    Returning None rather than a path for anything unrecognised is what keeps
-    "../../etc/passwd" and an absolute path alike from reaching the argv: the
-    name has to match a key that list_keys() already found.
+
+def resolve_key(identifier):
+    """Map a key identifier to its path, or (None, False) if it is not on offer.
+
+    The identifier is normally the absolute path from GET /api/ssh-keys. A bare
+    filename is also accepted and resolves to the first match in directory
+    order, which keeps short names working for the common case of one key
+    directory.
+
+    Either way the value is matched against keys that list_keys() already
+    found, never joined onto a directory. That is what keeps "../id_rsa" and
+    "/etc/shadow" out of the argv: they are not rejected by a pattern that has
+    to anticipate them, they simply are not in the set of keys that exist.
     """
-    for key in list_keys():
-        if key["name"] == name:
-            return SSH_KEY_DIR / key["name"], key["encrypted"]
+    if not identifier:
+        return None, False
+
+    candidates = list_keys()
+
+    for key in candidates:
+        if key["path"] == identifier:
+            return key["path"], key["encrypted"]
+
+    for key in candidates:
+        if key["name"] == identifier:
+            return key["path"], key["encrypted"]
+
     return None, False

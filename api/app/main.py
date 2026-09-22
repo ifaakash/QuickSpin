@@ -21,11 +21,10 @@ from .config import (
     JIT_PLAYBOOK,
     JIT_USERNAME_PATTERN,
     LIST_USERS_PLAYBOOK,
-    SSH_KEY_DIR,
     STATIC_DIR,
 )
 from .inventory import get_groups, get_host_names, get_hosts, load_inventory
-from .keys import list_keys, resolve_key
+from .keys import list_directories, list_keys, resolve_key
 import shlex
 
 from .runner import build_command, format_command, run_playbook
@@ -36,9 +35,13 @@ app = FastAPI(title="QuickSpin Dashboard API")
 class RunRequest(BaseModel):
     """Body of POST /api/run. An empty host means the whole group.
 
-    private_key names a key from GET /api/ssh-keys — a bare filename, never a
-    path. Empty means "do not pass --private-key at all", which leaves ssh to
-    use the agent or whatever ansible.cfg specifies.
+    private_key identifies a key listed by GET /api/ssh-keys, normally by its
+    absolute path; a bare filename also resolves if it is unambiguous. Either
+    way it must match a key this service discovered, so it is a choice from a
+    list rather than a path the caller invents.
+
+    Empty means "do not pass --private-key at all", which leaves ssh to use the
+    agent or whatever ansible.cfg specifies.
     """
 
     group: str
@@ -86,11 +89,17 @@ def list_users():
 def ssh_keys():
     """Private keys available to --private-key, read from disk on every call.
 
-    Each entry carries `encrypted`, so the dropdown can show which keys cannot
-    be used and why rather than offering a choice that is certain to be
-    rejected. Only names are returned — never paths, and never key material.
+    Covers every directory in SSH_KEY_DIRS, so keys on a mounted volume appear
+    beside the ones in ~/.ssh. Each entry carries its directory, so two keys
+    with the same filename on different mounts stay distinguishable, and
+    `encrypted`, so the dropdown can show which keys cannot be used and why
+    instead of offering a choice that is certain to be rejected.
+
+    Paths are returned because the dropdown submits one back as the chosen key.
+    They are still only ever paths this service found itself — key material is
+    never returned.
     """
-    return {"keys": list_keys(), "directory": str(SSH_KEY_DIR)}
+    return {"keys": list_keys(), "directories": list_directories()}
 
 
 def validate_target(body):
@@ -139,10 +148,14 @@ def validate_private_key(body):
     path, encrypted = resolve_key(body.private_key)
 
     if path is None:
-        available = [key["name"] for key in list_keys()]
+        available = [key["path"] for key in list_keys()]
+        searched = [entry["path"] for entry in list_directories()]
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown private key: {body.private_key}. Available: {available}",
+            detail=(
+                f"Unknown private key: {body.private_key}. "
+                f"Searched {searched}. Available: {available}"
+            ),
         )
 
     # An encrypted key cannot work here and fails in a way that reads like a
@@ -153,9 +166,9 @@ def validate_private_key(body):
         raise HTTPException(
             status_code=400,
             detail=(
-                f"{body.private_key} is passphrase-protected, and ansible has no "
-                "way to supply a passphrase. Load it into ssh-agent instead "
-                f"(ssh-add ~/.ssh/{body.private_key}) and leave this unset."
+                f"{path} is passphrase-protected, and ansible has no way to "
+                "supply a passphrase. Load it into ssh-agent instead "
+                f"(ssh-add {path}) and leave this unset."
             ),
         )
 
