@@ -12,7 +12,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 ANSIBLE_DIR = REPO_ROOT / "Ansible"
 ANSIBLE_CFG = ANSIBLE_DIR / "ansible.cfg"
-INVENTORY_FILE = ANSIBLE_DIR / "inventories" / "homelab.ini"
+inventory_name = os.getenv("INVENTORY_FILE_NAME", "homelab.ini")
+INVENTORY_FILE = ANSIBLE_DIR / "inventories" / inventory_name
 LIST_USERS_PLAYBOOK = ANSIBLE_DIR / "playbook-list-users.yml"
 JIT_PLAYBOOK = ANSIBLE_DIR / "playbook-jit-access.yml"
 
