@@ -19,6 +19,13 @@ JIT_PLAYBOOK = ANSIBLE_DIR / "playbook-jit-access.yml"
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
+# Where private keys offered to --private-key are looked for. The default suits
+# a shell (~/.ssh) and a plain container (/root/.ssh, where the host ssh
+# directory gets bind-mounted) without configuration. Under k3s the keys arrive
+# as a mounted Secret instead, so the deployment sets this to that mount path.
+ssh_key_dir = os.getenv("SSH_KEY_DIR", str(Path.home() / ".ssh"))
+SSH_KEY_DIR = Path(ssh_key_dir).expanduser()
+
 # The jobs and grants database. Nothing else in this API reads or writes it yet
 # — the persistence layer that does lives on feat/devopshub-dashboard — but
 # /healthz probes it so the check has a real dependency that can actually fail.

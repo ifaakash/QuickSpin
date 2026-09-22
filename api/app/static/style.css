@@ -455,6 +455,13 @@ pre {
   color: var(--ink-3);
 }
 
+/* Sits under the private key dropdown to name the directory being read. */
+.field-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
 kbd {
   display: inline-block;
   min-width: 17px;

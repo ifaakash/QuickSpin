@@ -23,10 +23,12 @@ spec:
           envFrom:
            - configMapRef:
                 name: devopshub-config
-         volumeMounts:
-           - name: ssh-key-volume
-             mountPath: "/secrets"
-             readOnly: true
+          # A container field, not a pod field. At pod level this is silently
+          # not a VolumeMount and the Secret never reaches the container.
+          volumeMounts:
+            - name: ssh-key-volume
+              mountPath: "/secrets"
+              readOnly: true
       volumes:
         - name: ssh-key-volume
           secret:

@@ -19,7 +19,7 @@ from .config import (
 )
 
 
-def build_command(playbook, host, extra_vars):
+def build_command(playbook, host, extra_vars, private_key=None):
     """Assemble the ansible-playbook argument list.
 
     Extra vars go as ONE JSON object. This is not a style choice: `-e "a=1 b=2"`
@@ -27,6 +27,12 @@ def build_command(playbook, host, extra_vars):
     is silently shredded into junk. json.dumps cannot be split that way.
 
     An empty host means "every host in the group", so --limit is left off.
+
+    private_key is likewise omitted when absent rather than passed empty. There
+    is no neutral value for --private-key: given "" ssh treats it as a real
+    filename, fails to read it, and stops trying the keys it would otherwise
+    have used. Leaving the flag off is what preserves the normal behaviour of
+    falling back to the agent and to ansible.cfg.
     """
     command = [
         "ansible-playbook",
@@ -36,6 +42,8 @@ def build_command(playbook, host, extra_vars):
     ]
     if host:
         command += ["--limit", host]
+    if private_key:
+        command += ["--private-key", str(private_key)]
     return command
 
 
@@ -61,12 +69,12 @@ def format_command(command):
     return " \\\n  ".join(lines)
 
 
-def run_playbook(playbook, host, extra_vars):
+def run_playbook(playbook, host, extra_vars, private_key=None):
     """Run the playbook and return a result dict for the dashboard.
 
     cwd is the Ansible directory so the playbook's roles/ resolve normally.
     """
-    command = build_command(playbook, host, extra_vars)
+    command = build_command(playbook, host, extra_vars, private_key)
     started = time.monotonic()
 
     try:
@@ -77,6 +85,11 @@ def run_playbook(playbook, host, extra_vars):
             text=True,
             env=ansible_env(),
             timeout=RUN_TIMEOUT_SECONDS,
+            # No stdin. ssh asks for a key passphrase interactively, and an
+            # inherited terminal would leave that prompt waiting on a descriptor
+            # nobody is watching until RUN_TIMEOUT_SECONDS expires. Closed stdin
+            # turns that hang into an immediate, readable failure.
+            stdin=subprocess.DEVNULL,
         )
         stdout = result.stdout
         stderr = result.stderr

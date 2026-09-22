@@ -21,9 +21,11 @@ from .config import (
     JIT_PLAYBOOK,
     JIT_USERNAME_PATTERN,
     LIST_USERS_PLAYBOOK,
+    SSH_KEY_DIR,
     STATIC_DIR,
 )
 from .inventory import get_groups, get_host_names, get_hosts, load_inventory
+from .keys import list_keys, resolve_key
 import shlex
 
 from .runner import build_command, format_command, run_playbook
@@ -32,11 +34,17 @@ app = FastAPI(title="QuickSpin Dashboard API")
 
 
 class RunRequest(BaseModel):
-    """Body of POST /api/run. An empty host means the whole group."""
+    """Body of POST /api/run. An empty host means the whole group.
+
+    private_key names a key from GET /api/ssh-keys — a bare filename, never a
+    path. Empty means "do not pass --private-key at all", which leaves ssh to
+    use the agent or whatever ansible.cfg specifies.
+    """
 
     group: str
     host: str = ""
     user: str
+    private_key: str = ""
 
 
 class JitRequest(RunRequest):
@@ -74,6 +82,17 @@ def list_users():
     return {"users": ALLOWED_USERS}
 
 
+@app.get("/api/ssh-keys")
+def ssh_keys():
+    """Private keys available to --private-key, read from disk on every call.
+
+    Each entry carries `encrypted`, so the dropdown can show which keys cannot
+    be used and why rather than offering a choice that is certain to be
+    rejected. Only names are returned — never paths, and never key material.
+    """
+    return {"keys": list_keys(), "directory": str(SSH_KEY_DIR)}
+
+
 def validate_target(body):
     """Reject anything not present in the inventory or on the allowlist.
 
@@ -81,6 +100,10 @@ def validate_target(body):
     just read, and the user must be on the fixed allowlist, so nothing arbitrary
     can reach the command line. Both /api/preview and /api/run go through it, so
     the command shown in the UI is the command that would actually run.
+
+    Returns the private key path to use, or None for "leave the flag off". The
+    caller passes that straight to the runner, which keeps the check and its
+    result in one place instead of resolving the name a second time.
     """
     data = read_inventory()
 
@@ -96,6 +119,47 @@ def validate_target(body):
         raise HTTPException(
             status_code=400, detail=f"User must be one of {ALLOWED_USERS}"
         )
+
+    return validate_private_key(body)
+
+
+def validate_private_key(body):
+    """Turn a key name into a path, or reject it.
+
+    Returns the absolute path to use, or None to leave --private-key off.
+
+    The name is resolved against the keys discovered on disk rather than joined
+    onto a directory, so "../id_rsa" and "/etc/shadow" are not rejected by a
+    pattern that has to anticipate them — they simply are not in the set of
+    names that exist, which is the same reason an unknown host is rejected.
+    """
+    if not body.private_key:
+        return None
+
+    path, encrypted = resolve_key(body.private_key)
+
+    if path is None:
+        available = [key["name"] for key in list_keys()]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown private key: {body.private_key}. Available: {available}",
+        )
+
+    # An encrypted key cannot work here and fails in a way that reads like a
+    # connection problem. ansible-playbook has no flag for a key passphrase —
+    # only ssh-agent can supply one — so refuse it now with the actual remedy
+    # instead of returning "Permission denied (publickey)" three minutes later.
+    if encrypted:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"{body.private_key} is passphrase-protected, and ansible has no "
+                "way to supply a passphrase. Load it into ssh-agent instead "
+                f"(ssh-add ~/.ssh/{body.private_key}) and leave this unset."
+            ),
+        )
+
+    return path
 
 
 def validate_jit(body):
@@ -153,9 +217,9 @@ def jit_extra_vars(body):
     return extra
 
 
-def command_response(playbook, host, extra_vars):
+def command_response(playbook, host, extra_vars, private_key=None):
     """Both preview routes return the command in the same two forms."""
-    command = build_command(playbook, host, extra_vars)
+    command = build_command(playbook, host, extra_vars, private_key)
     return {
         "command": shlex.join(command),
         "command_pretty": format_command(command),
@@ -170,16 +234,18 @@ def jit_actions():
 
 @app.post("/api/jit/preview")
 def jit_preview(body: JitRequest):
-    validate_target(body)
+    private_key = validate_target(body)
     validate_jit(body)
-    return command_response(JIT_PLAYBOOK, body.host, jit_extra_vars(body))
+    return command_response(
+        JIT_PLAYBOOK, body.host, jit_extra_vars(body), private_key
+    )
 
 
 @app.post("/api/jit/run")
 def jit_run(body: JitRequest):
-    validate_target(body)
+    private_key = validate_target(body)
     validate_jit(body)
-    return run_playbook(JIT_PLAYBOOK, body.host, jit_extra_vars(body))
+    return run_playbook(JIT_PLAYBOOK, body.host, jit_extra_vars(body), private_key)
 
 
 @app.post("/api/preview")
@@ -189,15 +255,19 @@ def preview(body: RunRequest):
     Uses the same build_command() the runner uses, so the panel can never drift
     from what actually executes.
     """
-    validate_target(body)
-    return command_response(LIST_USERS_PLAYBOOK, body.host, list_users_extra_vars(body))
+    private_key = validate_target(body)
+    return command_response(
+        LIST_USERS_PLAYBOOK, body.host, list_users_extra_vars(body), private_key
+    )
 
 
 @app.post("/api/run")
 def run(body: RunRequest):
     """Validate every field, then run the playbook and return its output."""
-    validate_target(body)
-    return run_playbook(LIST_USERS_PLAYBOOK, body.host, list_users_extra_vars(body))
+    private_key = validate_target(body)
+    return run_playbook(
+        LIST_USERS_PLAYBOOK, body.host, list_users_extra_vars(body), private_key
+    )
 
 
 @app.get("/healthz")

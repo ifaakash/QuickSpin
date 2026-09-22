@@ -5,6 +5,7 @@ const el = (id) => document.getElementById(id);
 const groupSelect = el("group");
 const hostSelect = el("host");
 const userSelect = el("user");
+const keySelect = el("key");
 const runButton = el("run");
 const commandBox = el("command");
 const commandBadge = el("cmd-badge");
@@ -15,6 +16,7 @@ const elapsedBox = el("elapsed");
 const jitGroup = el("jit-group");
 const jitHost = el("jit-host");
 const jitUser = el("jit-user");
+const jitKey = el("jit-key");
 const jitAction = el("jit-action");
 const jitUsername = el("jit-username");
 const jitPublickey = el("jit-publickey");
@@ -44,13 +46,16 @@ async function postJSON(url, payload) {
   return { ok: response.ok, body };
 }
 
-// Replace a dropdown's contents. Each option is { value, text }.
+// Replace a dropdown's contents. Each option is { value, text, disabled }.
+// Disabled options are still listed on purpose: an encrypted key should be
+// visible with the reason it cannot be used, not quietly missing.
 function fillSelect(select, options) {
   select.innerHTML = "";
   for (const option of options) {
     const element = document.createElement("option");
     element.value = option.value;
     element.textContent = option.text;
+    if (option.disabled) element.disabled = true;
     select.appendChild(element);
   }
 }
@@ -61,6 +66,7 @@ function currentRequest() {
     group: groupSelect.value,
     host: hostSelect.value,
     user: userSelect.value,
+    private_key: keySelect.value,
   };
 }
 
@@ -72,6 +78,7 @@ function currentJitRequest() {
     action: jitAction.value,
     username: jitUsername.value.trim(),
     publickey: jitPublickey.value.trim(),
+    private_key: jitKey.value,
   };
 }
 
@@ -145,6 +152,26 @@ async function loadHosts(select, group) {
 async function loadUsers(select) {
   const data = await getJSON("/api/users");
   fillSelect(select, data.users.map((name) => ({ value: name, text: name })));
+}
+
+// Empty value means no --private-key, so ssh keeps its normal behaviour of
+// trying the agent and whatever ansible.cfg points at.
+async function loadKeys(select, noteId) {
+  const data = await getJSON("/api/ssh-keys");
+  const options = [{ value: "", text: "Default (ssh-agent / ansible.cfg)" }];
+  for (const key of data.keys) {
+    options.push({
+      value: key.name,
+      text: key.encrypted ? `${key.name} — encrypted, use ssh-agent` : key.name,
+      disabled: key.encrypted,
+    });
+  }
+  fillSelect(select, options);
+
+  const usable = data.keys.filter((key) => !key.encrypted).length;
+  el(noteId).textContent = data.keys.length
+    ? `${usable} of ${data.keys.length} usable in ${data.directory}`
+    : `no private keys found in ${data.directory}`;
 }
 
 async function loadJitActions(select) {
@@ -433,6 +460,7 @@ groupSelect.addEventListener("change", async () => {
 });
 hostSelect.addEventListener("change", refreshPreview);
 userSelect.addEventListener("change", refreshPreview);
+keySelect.addEventListener("change", refreshPreview);
 runButton.addEventListener("click", runPlaybook);
 
 jitGroup.addEventListener("change", async () => {
@@ -441,6 +469,7 @@ jitGroup.addEventListener("change", async () => {
 });
 jitHost.addEventListener("change", refreshJitPreview);
 jitUser.addEventListener("change", refreshJitPreview);
+jitKey.addEventListener("change", refreshJitPreview);
 jitAction.addEventListener("change", () => {
   syncJitAction();
   refreshJitPreview();
@@ -475,6 +504,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadGroups(jitGroup);
     await loadUsers(userSelect);
     await loadUsers(jitUser);
+    await loadKeys(keySelect, "key-note");
+    await loadKeys(jitKey, "jit-key-note");
     await loadJitActions(jitAction);
     if (groupSelect.value) {
       await loadHosts(hostSelect, groupSelect.value);
