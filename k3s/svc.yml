@@ -23,5 +23,5 @@ spec:
     app: devopshub-db
   ports:
     - protocol: TCP
-      port: 5432
-      targetPort: 5432
+      port: 3306
+      targetPort: 3306

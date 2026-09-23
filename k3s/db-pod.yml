@@ -24,6 +24,8 @@ spec:
             configMapKeyRef:
               name: devopshub-config
               key: MYSQL_USER
+        - name: MYSQL_HOST
+          value: devopshub-db-svc
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
