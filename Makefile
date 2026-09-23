@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup compile lint plan apply ansible api api-setup deploy destroy clean
+.PHONY: help setup compile lint plan apply ansible api api-setup db-up db-down deploy destroy clean
 
 help:
 	@echo "========================================================================"
@@ -13,6 +13,8 @@ help:
 	@echo "make apply     - Compile configuration and apply terraform infrastructure"
 	@echo "make ansible   - Trigger Ansible playbooks to configure instances over SSM"
 	@echo "make api-setup - Create the api/ virtualenv and install FastAPI"
+	@echo "make db-up     - Start the local MySQL and the whodb browser UI"
+	@echo "make db-down   - Stop them, keeping the data volume"
 	@echo "make api       - Serve the dashboard on http://127.0.0.1:8000"
 	@echo "make deploy    - Execute end-to-end flow: compile -> apply -> ansible"
 	@echo "make destroy   - Tear down deployed cloud infrastructure"
@@ -55,11 +57,28 @@ api-setup:
 	@echo "--> Creating the dashboard virtualenv..."
 	cd api && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
+COMPOSE_DB := docker compose -f docker-db-visualiser-compose.yml
+
+db-up:
+	@echo "--> Starting MySQL on :3306 and whodb on http://127.0.0.1:8199 ..."
+	$(COMPOSE_DB) up -d
+
+# No -v. The volume is the job and grant history, and dropping it silently is
+# not something a stop command should do; remove it deliberately with
+# `docker volume rm quickspin_devopshub-mysql-data` when that is what you mean.
+db-down:
+	@echo "--> Stopping the local database, keeping its volume ..."
+	$(COMPOSE_DB) down
+
 # Bound to 127.0.0.1 on purpose. This service runs ansible against real hosts
 # and has no authentication, so it must never listen on 0.0.0.0.
+#
+# MYSQL_PASSWORD matches docker-db-visualiser-compose.yml. The other settings
+# already default to the same values in api/app/config.py, so only the password
+# has to be supplied here.
 api:
 	@echo "--> Serving the dashboard on http://127.0.0.1:8000 ..."
-	cd api && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+	cd api && MYSQL_PASSWORD=devopshub .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 deploy: compile
 	@echo "--> Deploying and Configuring full stack..."

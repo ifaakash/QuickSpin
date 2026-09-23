@@ -36,10 +36,43 @@ SSH_KEY_DIRS = [
     Path(part).expanduser() for part in ssh_key_dirs.split(":") if part.strip()
 ]
 
-# The jobs and grants database. Nothing else in this API reads or writes it yet
-# — the persistence layer that does lives on feat/devopshub-dashboard — but
-# /healthz probes it so the check has a real dependency that can actually fail.
-DB_PATH = REPO_ROOT / "api" / "devopshub.db"
+# ---------------------------------------------------------------------------
+# MySQL
+#
+# The jobs and grants store. It is a network service now rather than a file next
+# to the code, which is the point of the move: every replica talks to one
+# database instead of carrying a private copy that silently disagrees with the
+# others the moment the Deployment scales past one pod.
+#
+# Names are unprefixed, matching INVENTORY_FILE_NAME and SSH_KEY_DIRS, so
+# everything in this file is configured the same way.
+# ---------------------------------------------------------------------------
+MYSQL_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
+MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
+MYSQL_USER = os.getenv("MYSQL_USER", "devopshub")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "devopshub")
+
+
+def _mysql_password():
+    """Read the password from a file when one is named, otherwise from the env.
+
+    MYSQL_PASSWORD_FILE exists because a mounted Secret can be mode 0400, while
+    an environment variable is readable from /proc/<pid>/environ and is inherited
+    by every child process — and this API spawns ansible-playbook, so the
+    database password would be sitting in the environment of a process that
+    connects to other machines. The file wins when both are set.
+    """
+    path = os.getenv("MYSQL_PASSWORD_FILE")
+    if path:
+        return Path(path).read_text().strip()
+    return os.getenv("MYSQL_PASSWORD", "")
+
+
+MYSQL_PASSWORD = _mysql_password()
+
+# What the API reports it is pointed at, for /healthz and error text. Assembled
+# without the password so neither can ever leak it.
+DB_DESCRIPTION = f"{MYSQL_USER}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
 
 # The only values accepted for ansible_user. Anything else is rejected before
 # a command is built, so this list is the entire user-input surface.
@@ -61,9 +94,18 @@ RUN_TIMEOUT_SECONDS = 300
 # ansible-inventory only reads a file, so it gets a much shorter leash.
 INVENTORY_TIMEOUT_SECONDS = 30
 
-# A health check must answer or fail fast, never queue behind a writer holding
-# the database lock. Two seconds is long enough to ride out a normal commit.
-HEALTH_DB_TIMEOUT_SECONDS = 2
+# Bound every stage of a database call: the TCP connect, and each read and
+# write on the socket. A health check has to answer or fail fast, and an
+# unreachable MySQL pod otherwise hangs connect() for the OS default of over a
+# minute — long enough that the probe times out without ever reporting why.
+DB_CONNECT_TIMEOUT_SECONDS = 5
+DB_READ_TIMEOUT_SECONDS = 10
+
+# init_db() runs at startup, where the app almost always wins the race against
+# MySQL becoming ready — a file-backed database had nothing to race. Retry
+# instead of dying on the first refused connection.
+DB_INIT_RETRIES = 10
+DB_INIT_RETRY_DELAY_SECONDS = 3
 
 
 def ansible_env():

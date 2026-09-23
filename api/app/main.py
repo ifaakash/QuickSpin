@@ -8,14 +8,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from contextlib import closing
+import asyncio
 import re
-import sqlite3
+import sys
+from contextlib import asynccontextmanager
+
+import pymysql
 
 from .config import (
     ALLOWED_USERS,
-    DB_PATH,
-    HEALTH_DB_TIMEOUT_SECONDS,
+    DB_DESCRIPTION,
+    DB_INIT_RETRIES,
+    DB_INIT_RETRY_DELAY_SECONDS,
     JIT_ACTIONS,
     JIT_KEY_PREFIXES,
     JIT_PLAYBOOK,
@@ -23,13 +27,54 @@ from .config import (
     LIST_USERS_PLAYBOOK,
     STATIC_DIR,
 )
+from .db import init_db, ping
 from .inventory import get_groups, get_host_names, get_hosts, load_inventory
 from .keys import list_directories, list_keys, resolve_key
 import shlex
 
 from .runner import build_command, format_command, run_playbook
 
-app = FastAPI(title="QuickSpin Dashboard API")
+
+@asynccontextmanager
+async def lifespan(app):
+    """Create the schema before serving, retrying while MySQL comes up.
+
+    A file-backed database was ready the instant the process was. A MySQL server
+    is a separate pod with its own startup, and the API almost always wins that
+    race, so the first connection attempt being refused is normal rather than an
+    error worth dying over.
+
+    If it never comes up we still start. Exiting here would mean the container
+    restarts forever with the reason buried in a log nobody has kubectl open
+    for; starting means /healthz answers 503 with the actual driver error, the
+    readiness probe keeps the pod out of the Service, and the failure is one
+    curl away. That is the entire reason for having a health check that can
+    fail.
+    """
+    for attempt in range(1, DB_INIT_RETRIES + 1):
+        try:
+            init_db()
+            break
+        except (pymysql.MySQLError, OSError) as error:
+            if attempt == DB_INIT_RETRIES:
+                print(
+                    f"init_db failed after {attempt} attempts, serving anyway "
+                    f"({DB_DESCRIPTION}): {error}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            else:
+                print(
+                    f"waiting for MySQL at {DB_DESCRIPTION} "
+                    f"(attempt {attempt}/{DB_INIT_RETRIES}): {error}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                await asyncio.sleep(DB_INIT_RETRY_DELAY_SECONDS)
+    yield
+
+
+app = FastAPI(title="QuickSpin Dashboard API", lifespan=lifespan)
 
 
 class RunRequest(BaseModel):
@@ -288,45 +333,38 @@ def healthz():
     """Report ok only if the database is actually readable.
 
     The point of a health check is that it can fail. Returning a literal
-    {"status": "ok"} proves the process accepted a socket and nothing else, so
-    this opens the database and reads from both tables instead.
+    {"status": "ok"} proves the process accepted a socket and nothing else.
 
-    Two details make the difference between a real check and a tautology:
+    Against SQLite this endpoint had to work to find a failure at all: opening a
+    plain path CREATED the missing database and reported success, so the probe
+    needed a read-only URI to avoid manufacturing the very file it was checking
+    for, and a real query because connect() did no I/O on its own.
 
-    mode=ro
-        sqlite3.connect() on a plain path CREATES a missing database and
-        succeeds. A probe written that way can never report a missing file — it
-        manufactures an empty one and calls it healthy. The read-only URI raises
-        instead, and never mutates the file it is inspecting.
+    A client-server database inverts that. Connecting is a TCP round trip and an
+    authentication exchange, so a MySQL pod that is down, a wrong host, a wrong
+    password or a network policy in the way all fail on their own. What
+    connecting still cannot tell you is whether the schema is there, which is
+    why ping() counts rows in both tables — that is what catches a healthy
+    server holding an empty or drifted database.
 
-    SELECT count(*)
-        connect() is lazy and does no I/O until a statement runs, so a corrupt
-        file opens cleanly. Touching both tables forces the read and also
-        catches schema drift, not just a missing or unreadable file.
-
-    Known cost of mode=ro: the database is in WAL mode, and WAL readers need to
-    create a -shm sidecar, so an unwritable directory fails the check even
-    though the file is intact. That is reported as unhealthy on purpose — a
-    directory this service cannot write is one it cannot record a job into.
+    DB_DESCRIPTION is reported rather than any connection string, so the
+    password cannot leak into a response or a log line.
     """
     try:
-        with closing(
-            sqlite3.connect(
-                f"file:{DB_PATH}?mode=ro",
-                uri=True,
-                timeout=HEALTH_DB_TIMEOUT_SECONDS,
-            )
-        ) as connection:
-            jobs = connection.execute("SELECT count(*) FROM jobs").fetchone()[0]
-            grants = connection.execute("SELECT count(*) FROM grants").fetchone()[0]
-    except (sqlite3.Error, OSError) as error:
+        jobs, grants = ping()
+    except (pymysql.MySQLError, OSError) as error:
         # 503, not 500: the service is up but a dependency is not, which is
         # what tells a load balancer to stop sending traffic.
         raise HTTPException(
             status_code=503, detail=f"database unavailable: {error}"
         )
 
-    return {"status": "ok", "database": str(DB_PATH), "jobs": jobs, "grants": grants}
+    return {
+        "status": "ok",
+        "database": DB_DESCRIPTION,
+        "jobs": jobs,
+        "grants": grants,
+    }
 
 
 class NoCacheStaticFiles(StaticFiles):

@@ -1,8 +1,50 @@
+# Local development database, plus a browser UI for it.
+#
+#   docker compose -f docker-db-visualiser-compose.yml up -d
+#   make api
+#
+# The app talks to a MySQL server now, so one has to be running before the
+# dashboard will start cleanly. whodb used to read the SQLite file straight off
+# disk through a bind mount; there is no file any more, so it connects over the
+# network like any other client — which is the same change the API itself went
+# through.
+#
+# These credentials are deliberately throwaway and match the defaults in
+# api/app/config.py. Nothing here is meant to leave a laptop.
 services:
+  db:
+    container_name: devopshub-mysql
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: devopshub-root
+      MYSQL_DATABASE: devopshub
+      MYSQL_USER: devopshub
+      MYSQL_PASSWORD: devopshub
+    ports:
+      - "3306:3306"
+    volumes:
+      # A named volume, so the job history survives `down` and a new image tag.
+      # It is the laptop-sized version of the PVC the database pod gets in the
+      # cluster: state lives with the database, not inside the application.
+      - devopshub-mysql-data:/var/lib/mysql
+    healthcheck:
+      # mysqld accepts TCP a while before it will answer queries. Without this
+      # the UI starts against a server that refuses it and looks broken.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   db-visualise:
     container_name: whodb
     image: clidey/whodb
+    restart: unless-stopped
     ports:
       - "8199:8080"
-    volumes:
-      - "./api/:/db"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  devopshub-mysql-data:

@@ -1,2 +1,13 @@
 fastapi==0.141.1
 uvicorn[standard]==0.53.0
+
+# MySQL driver. Pure Python, so the slim image needs no compiler or
+# libmysqlclient-dev the way mysqlclient would.
+PyMySQL==1.2.3
+
+# Not optional, despite looking like one. MySQL 8 authenticates with
+# caching_sha2_password by default, and PyMySQL needs cryptography to do that
+# exchange over a connection without TLS. Without it every connect fails with
+# "cryptography is required for sha256_password or caching_sha2_password",
+# which reads like a driver bug rather than a missing dependency.
+cryptography==50.0.1
