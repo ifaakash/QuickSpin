@@ -9,3 +9,4 @@ data:
   # a key baked into the image or bind-mounted still appears. Missing
   # directories are skipped.
   SSH_KEY_DIRS: "/secrets:/root/.ssh"
+  MYSQL_USER: "devopshub"
