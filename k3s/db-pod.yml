@@ -3,26 +3,27 @@ kind: Pod
 metadata:
   name: db
 spec:
-  - name: devopshub-db
-    image: mysql:8.4
-    volumeMounts:
-      - name: devopshub-db-pvc
-        mountPath: /var/lib/mysql
-    env:
-      - name: MYSQL_DATABASE
-        value: devopshub
-      - name: MYSQL_ROOT_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: db-password
-            key: password
-      - name: MYSQL_USER
-        valueFrom:
-          configMapKeyRef:
-            name: devopshub-config
-            key: MYSQL_USER
-      - name: MYSQL_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: db-password
-            key: root-password
+  containers:
+    - name: devopshub-db
+      image: mysql:8.4
+      volumeMounts:
+        - name: devopshub-db-pvc
+          mountPath: /var/lib/mysql
+      env:
+        - name: MYSQL_DATABASE
+          value: devopshub
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-password
+              key: password
+        - name: MYSQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: devopshub-config
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-password
+              key: root-password
