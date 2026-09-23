@@ -7,7 +7,7 @@ spec:
     - name: devopshub-db
       image: mysql:8.4
       volumeMounts:
-        - name: devopshub-db-pvc
+        - name: devopshub-db-volume
           mountPath: /var/lib/mysql
       env:
         - name: MYSQL_DATABASE
@@ -27,3 +27,7 @@ spec:
             secretKeyRef:
               name: db-password
               key: root-password
+  volumes:
+    - name: devopshub-db-volume
+      persistentVolumeClaim:
+        claimName: devopshub-db-pvc
