@@ -23,6 +23,12 @@ spec:
           envFrom:
            - configMapRef:
                 name: devopshub-config
+          env:
+           -  name: MYSQL_PASSWORD
+              valueFrom:
+               secretKeyRef:
+                 name: db-password
+                 key: password
           # A container field, not a pod field. At pod level this is silently
           # not a VolumeMount and the Secret never reaches the container.
           volumeMounts:
