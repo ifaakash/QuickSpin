@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: db
+  labels:
+    app: devopshub-db
 spec:
   containers:
     - name: devopshub-db
@@ -16,7 +18,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: db-password
-              key: password
+              key: root-password
         - name: MYSQL_USER
           valueFrom:
             configMapKeyRef:
@@ -26,7 +28,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: db-password
-              key: root-password
+              key: password
   volumes:
     - name: devopshub-db-volume
       persistentVolumeClaim:
