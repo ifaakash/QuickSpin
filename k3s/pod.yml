@@ -10,3 +10,6 @@ spec:
       image: devopshub:v1
       ports:
         - containerPort: 8000
+      volumeMounts:
+        - name: devopshub-db-pvc
+          mountPath: /var/lib/mysql

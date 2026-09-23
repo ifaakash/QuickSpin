@@ -5,6 +5,9 @@ metadata:
 sepc:
   - name: devopshub-db
     image: mysql:8.4
+    volumeMounts:
+      - name: devopshub-db-pvc
+        mountPath: /var/lib/mysql
     env:
       - name: MYSQL_DATABASE
         value: devopshub
