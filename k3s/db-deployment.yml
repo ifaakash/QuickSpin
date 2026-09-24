@@ -1,0 +1,51 @@
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devopshub-db-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: devopshub-db
+      labels:
+        app: devopshub-db
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - k3d-k3d-worker-1-0
+      containers:
+        - name: db
+          image: mysql:8.4
+          volumeMounts:
+            - name: devopshub-db-volume
+              mountPath: /var/lib/mysql
+          env:
+            - name: MYSQL_DATABASE
+              value: devopshub
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-password
+                  key: root-password
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: devopshub-config
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-password
+                  key: password
+      volumes:
+        - name: devopshub-db-volume
+          persistentVolumeClaim:
+            claimName: devopshub-db-pvc
