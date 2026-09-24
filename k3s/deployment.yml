@@ -1,3 +1,5 @@
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,21 +16,30 @@ spec:
       labels:
         app: devopshub
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - k3d-k3d-worker-1-0
       containers:
         - name: devopshub
           image: docker.io/library/devopshub:v1
           imagePullPolicy: Never
           ports:
-           - containerPort: 8000
+            - containerPort: 8000
           envFrom:
-           - configMapRef:
+            - configMapRef:
                 name: devopshub-config
           env:
-           -  name: MYSQL_PASSWORD
+            - name: MYSQL_PASSWORD
               valueFrom:
-               secretKeyRef:
-                 name: db-password
-                 key: password
+                secretKeyRef:
+                  name: db-password
+                  key: password
           # A container field, not a pod field. At pod level this is silently
           # not a VolumeMount and the Secret never reaches the container.
           volumeMounts:
