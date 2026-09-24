@@ -6,6 +6,9 @@ metadata:
   name: devopshub-db-deployment
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: devopshub-db
   template:
     metadata:
       name: devopshub-db
@@ -14,7 +17,7 @@ spec:
     spec:
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
+          requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: kubernetes.io/hostname
