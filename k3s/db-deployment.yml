@@ -6,6 +6,8 @@ metadata:
   name: devopshub-db-deployment
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: devopshub-db
