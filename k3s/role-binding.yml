@@ -9,6 +9,7 @@ rules:
     - nodes
     - nodes/metrics
     - pods
+    - nodex/proxy
     - services
     - endpoints
     verbs: ["get", "list", "watch"]
