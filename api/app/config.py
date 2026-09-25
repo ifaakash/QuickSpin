@@ -88,6 +88,21 @@ JIT_KEY_PREFIXES = ("ssh-rsa", "ssh-ed25519")
 # Jinja braces would be a template injection. Pin the charset here.
 JIT_USERNAME_PATTERN = r"^jit_[a-z0-9_-]{1,28}$"
 
+# How long a grant may live. A ceiling exists because the whole point of JIT
+# access is that it ends: without a maximum, one request asking for a year turns
+# the feature back into a permanent account with extra steps.
+JIT_TTL_DEFAULT_MINUTES = 60
+JIT_TTL_MAX_MINUTES = 480
+JIT_TTL_CHOICES = [15, 60, 240, 480]
+
+# Which key the expire command authenticates with. The API takes one per
+# request; a scheduled revoke has no request to take it from, and the grants
+# table deliberately does not store one — a key recorded at provision time would
+# be wrong the moment it was rotated. Empty means "pass no --private-key and let
+# ansible.cfg or an agent decide", which is right on a laptop and wrong in a pod
+# where neither exists.
+JIT_REVOKE_KEY = os.getenv("JIT_REVOKE_KEY", "")
+
 # Kill a playbook that hangs, rather than holding the HTTP request forever.
 RUN_TIMEOUT_SECONDS = 300
 

@@ -24,10 +24,10 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - k3d-k3d-worker-1-0
+                      - k3d-worker-1-0
       containers:
         - name: devopshub
-          image: docker.io/library/devopshub:v1
+          image: devopshub:v1
           imagePullPolicy: Never
           ports:
             - containerPort: 8000

@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup compile lint plan apply ansible api api-setup db-up db-down deploy destroy clean
+.PHONY: help setup compile lint plan apply ansible api api-setup db-up db-down expire expire-dry deploy destroy clean
 
 help:
 	@echo "========================================================================"
@@ -16,6 +16,8 @@ help:
 	@echo "make db-up     - Start the local MySQL and the whodb browser UI"
 	@echo "make db-down   - Stop them, keeping the data volume"
 	@echo "make api       - Serve the dashboard on http://127.0.0.1:8000"
+	@echo "make expire    - Revoke every JIT grant past its TTL"
+	@echo "make expire-dry- Show what expire would revoke, change nothing"
 	@echo "make deploy    - Execute end-to-end flow: compile -> apply -> ansible"
 	@echo "make destroy   - Tear down deployed cloud infrastructure"
 	@echo "make clean     - Delete temporary generated files"
@@ -79,6 +81,18 @@ db-down:
 api:
 	@echo "--> Serving the dashboard on http://127.0.0.1:8000 ..."
 	cd api && MYSQL_PASSWORD=devopshub .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+# Expiry is a command, not a background thread. Point cron, a systemd timer, a
+# Kubernetes CronJob or an AWX Schedule at this - expiry then happens whether or
+# not the dashboard is running. Safe to run twice: user state=absent is
+# idempotent, and an already-revoked grant is not selected again.
+expire:
+	@echo "--> Revoking expired JIT grants..."
+	cd api && MYSQL_PASSWORD=devopshub .venv/bin/python -m app.expire
+
+expire-dry:
+	@echo "--> Grants that are past their TTL (no changes made)..."
+	cd api && MYSQL_PASSWORD=devopshub .venv/bin/python -m app.expire --dry-run
 
 deploy: compile
 	@echo "--> Deploying and Configuring full stack..."

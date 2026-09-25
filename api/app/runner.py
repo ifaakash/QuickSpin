@@ -69,6 +69,25 @@ def format_command(command):
     return " \\\n  ".join(lines)
 
 
+def jit_extra_vars(run_as, group, action, username, publickey=None):
+    """The extra vars playbook-jit-access.yml expects.
+
+    Plain arguments rather than a request object, so the expire command can call
+    this with a row out of the grants table. One builder means a scheduled
+    revoke and a clicked revoke cannot drift apart.
+    """
+    extra = {
+        "ansible_user": run_as,
+        "jit_target": group,
+        "jit_action": action,
+        "jit_username": username,
+    }
+    # revoke.yml never reads the key, and the role only asserts it on provision.
+    if action == "provision":
+        extra["jit_publickey"] = publickey
+    return extra
+
+
 def run_playbook(playbook, host, extra_vars, private_key=None):
     """Run the playbook and return a result dict for the dashboard.
 

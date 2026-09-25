@@ -23,16 +23,29 @@ from .config import (
     JIT_ACTIONS,
     JIT_KEY_PREFIXES,
     JIT_PLAYBOOK,
+    JIT_TTL_CHOICES,
+    JIT_TTL_DEFAULT_MINUTES,
+    JIT_TTL_MAX_MINUTES,
     JIT_USERNAME_PATTERN,
     LIST_USERS_PLAYBOOK,
     STATIC_DIR,
 )
-from .db import init_db, ping
+from .db import (
+    active_grants,
+    create_grant,
+    find_active_grant,
+    get_job,
+    init_db,
+    list_jobs,
+    mark_grant_revoked,
+    ping,
+    record_job,
+)
 from .inventory import get_groups, get_host_names, get_hosts, load_inventory
 from .keys import list_directories, list_keys, resolve_key
 import shlex
 
-from .runner import build_command, format_command, run_playbook
+from .runner import build_command, format_command, jit_extra_vars, run_playbook
 
 
 @asynccontextmanager
@@ -101,6 +114,9 @@ class JitRequest(RunRequest):
     action: str
     username: str
     publickey: str = ""
+    # How long the grant may live. Defaulted rather than optional, because a
+    # request that forgets to say would otherwise mean "forever".
+    ttl_minutes: int = JIT_TTL_DEFAULT_MINUTES
 
 
 def read_inventory():
@@ -232,6 +248,14 @@ def validate_jit(body):
             status_code=400, detail=f"Action must be one of {JIT_ACTIONS}"
         )
 
+    # Checked here and not only in the dropdown: the dropdown is a suggestion,
+    # the API is the boundary. A caller with curl is the one that matters.
+    if not 1 <= body.ttl_minutes <= JIT_TTL_MAX_MINUTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"ttl_minutes must be between 1 and {JIT_TTL_MAX_MINUTES}",
+        )
+
     # jit_username reaches task names and the user module. Jinja braces in it
     # would be a template injection, so pin the charset rather than only the
     # jit_ prefix the role checks.
@@ -263,18 +287,6 @@ def list_users_extra_vars(body):
     return {"ansible_user": body.user, "list_users_target": body.group}
 
 
-def jit_extra_vars(body):
-    extra = {
-        "ansible_user": body.user,
-        "jit_target": body.group,
-        "jit_action": body.action,
-        "jit_username": body.username,
-    }
-    if body.action == "provision":
-        extra["jit_publickey"] = body.publickey
-    return extra
-
-
 def command_response(playbook, host, extra_vars, private_key=None):
     """Both preview routes return the command in the same two forms."""
     command = build_command(playbook, host, extra_vars, private_key)
@@ -284,10 +296,46 @@ def command_response(playbook, host, extra_vars, private_key=None):
     }
 
 
+def record_run(result, playbook, action, body):
+    """Store a finished run and return its job id, or None if the write failed.
+
+    Called only after the playbook has already executed, which decides how a
+    database failure has to be handled. The account really was created on the
+    host, so turning a successful run into an HTTP error would tell the operator
+    the opposite of the truth — the one lie this service must never tell. The
+    run is returned either way and persistence_error carries the gap, so a
+    missing audit record is visible instead of silent.
+    """
+    try:
+        return record_job(
+            playbook=playbook,
+            action=action,
+            group=body.group,
+            host=body.host,
+            run_as=body.user,
+            result=result,
+            triggered_by="dashboard",
+        )
+    except (pymysql.MySQLError, OSError) as error:
+        print(f"record_job failed: {error}", file=sys.stderr)
+        result["persistence_error"] = f"run not recorded: {error}"
+        return None
+
+
 @app.get("/api/jit/actions")
 def jit_actions():
     """The dropdown reads the allowlist so the two never drift apart."""
     return {"actions": JIT_ACTIONS}
+
+
+@app.get("/api/jit/ttl")
+def jit_ttl():
+    """The dropdown reads these so the UI and the ceiling never drift apart."""
+    return {
+        "choices": JIT_TTL_CHOICES,
+        "default": JIT_TTL_DEFAULT_MINUTES,
+        "max": JIT_TTL_MAX_MINUTES,
+    }
 
 
 @app.post("/api/jit/preview")
@@ -295,15 +343,66 @@ def jit_preview(body: JitRequest):
     private_key = validate_target(body)
     validate_jit(body)
     return command_response(
-        JIT_PLAYBOOK, body.host, jit_extra_vars(body), private_key
+        JIT_PLAYBOOK, body.host, jit_extra_vars(
+            run_as=body.user,
+            group=body.group,
+            action=body.action,
+            username=body.username,
+            publickey=body.publickey,
+        ), private_key
     )
 
 
 @app.post("/api/jit/run")
 def jit_run(body: JitRequest):
+    """Run the JIT playbook, record the job, and open or close the grant."""
     private_key = validate_target(body)
     validate_jit(body)
-    return run_playbook(JIT_PLAYBOOK, body.host, jit_extra_vars(body), private_key)
+
+    result = run_playbook(JIT_PLAYBOOK, body.host, jit_extra_vars(
+            run_as=body.user,
+            group=body.group,
+            action=body.action,
+            username=body.username,
+            publickey=body.publickey,
+        ), private_key)
+    job_id = record_run(result, JIT_PLAYBOOK, body.action, body)
+    result["job_id"] = job_id
+
+    # State only changes when ansible actually succeeded. A failed provision
+    # must not leave a grant behind for the expire command to chase, and a
+    # failed revoke must not mark one closed that is still on the host.
+    #
+    # job_id being None means the database is unreachable, so there is nothing
+    # to hang a grant off and no point trying — the grant's provision_job_id is
+    # a foreign key into the row that just failed to write.
+    if not result["ok"] or job_id is None:
+        return result
+
+    try:
+        if body.action == "provision":
+            result["grant_id"] = create_grant(
+                username=body.username,
+                group=body.group,
+                host=body.host,
+                run_as=body.user,
+                ttl_minutes=body.ttl_minutes,
+                provision_job_id=job_id,
+            )
+        elif body.action == "revoke":
+            # A revoke clicked by hand closes the same grant the schedule would
+            # have, so the two paths cannot disagree about what is still open.
+            grant = find_active_grant(body.username, body.group, body.host)
+            if grant:
+                mark_grant_revoked(grant["id"], job_id)
+                result["grant_id"] = grant["id"]
+    except (pymysql.MySQLError, OSError) as error:
+        # Loud, because this one matters more than a missing job row: an
+        # unrecorded provision is an account nothing will ever expire.
+        print(f"grant write failed: {error}", file=sys.stderr)
+        result["persistence_error"] = f"grant not recorded: {error}"
+
+    return result
 
 
 @app.post("/api/preview")
@@ -323,9 +422,35 @@ def preview(body: RunRequest):
 def run(body: RunRequest):
     """Validate every field, then run the playbook and return its output."""
     private_key = validate_target(body)
-    return run_playbook(
+
+    result = run_playbook(
         LIST_USERS_PLAYBOOK, body.host, list_users_extra_vars(body), private_key
     )
+    # A job with no grant. Reading the passwd file grants nobody anything, but
+    # it is still someone running a command on a host, so it is still audited.
+    result["job_id"] = record_run(result, LIST_USERS_PLAYBOOK, None, body)
+    return result
+
+
+@app.get("/api/jobs")
+def jobs(limit: int = 50):
+    """Recent runs, newest first. Output is left out — it can be megabytes."""
+    return {"jobs": list_jobs(limit=min(limit, 200))}
+
+
+@app.get("/api/jobs/{job_id}")
+def job(job_id: int):
+    """One run including its full stdout and stderr."""
+    found = get_job(job_id)
+    if found is None:
+        raise HTTPException(status_code=404, detail=f"No job {job_id}")
+    return found
+
+
+@app.get("/api/grants")
+def grants():
+    """Every grant still believed to be live, soonest expiry first."""
+    return {"grants": active_grants()}
 
 
 @app.get("/healthz")
