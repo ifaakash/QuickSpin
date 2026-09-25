@@ -27,7 +27,7 @@ spec:
                       - k3d-worker-1-0
       containers:
         - name: devopshub
-          image: devopshub:v2
+          image: devopshub:v3
           imagePullPolicy: Never
           ports:
             - containerPort: 8000
