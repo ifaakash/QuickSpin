@@ -30,6 +30,15 @@ spec:
           volumeMounts:
             - name: devopshub-db-volume
               mountPath: /var/lib/mysql
+#          readinessProbe:
+#            exec:
+#              command:
+#                - mysqladmin
+#                - ping
+#                - -h
+#                - localhost
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
           env:
             - name: MYSQL_DATABASE
               value: devopshub
