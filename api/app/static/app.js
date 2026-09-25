@@ -20,6 +20,7 @@ const jitKey = el("jit-key");
 const jitAction = el("jit-action");
 const jitUsername = el("jit-username");
 const jitPublickey = el("jit-publickey");
+const jitTtl = el("jit-ttl");
 const jitRunButton = el("jit-run");
 
 // Which config panel is showing. Decides what ⌘↵ and the preview act on.
@@ -79,6 +80,9 @@ function currentJitRequest() {
     username: jitUsername.value.trim(),
     publickey: jitPublickey.value.trim(),
     private_key: jitKey.value,
+    // Number(), because a <select> value is a string and the API wants an int.
+    // The fallback matters: a grant with no TTL would mean "forever".
+    ttl_minutes: Number(jitTtl.value) || 60,
   };
 }
 
@@ -98,14 +102,21 @@ function switchView(name) {
   for (const tab of document.querySelectorAll(".nav-tab")) {
     tab.classList.toggle("is-active", tab.dataset.view === name);
   }
-  // Run and JIT share one layout and swap only the config panel.
-  el("layout").hidden = name === "inventory";
+  // Run and JIT share one layout and swap only the config panel. Every other
+  // view is full width, so this has to name the two that keep the layout rather
+  // than list the ones that do not — adding a third view to an exclusion list
+  // silently renders it on top of the Run panel.
+  el("layout").hidden = name !== "run" && name !== "jit";
   el("config-run").hidden = name !== "run";
   el("config-jit").hidden = name !== "jit";
+  el("view-activity").hidden = name !== "activity";
   el("view-inventory").hidden = name !== "inventory";
 
   if (name === "run") refreshPreview();
   if (name === "jit") refreshJitPreview();
+  // Reloaded on every visit rather than cached: grants expire on a schedule, so
+  // a stale table would claim access is live that the expire command has cut.
+  if (name === "activity") loadActivity();
 }
 
 function applyTheme(theme) {
@@ -180,6 +191,39 @@ async function loadKeys(select, noteId) {
   el(noteId).textContent = data.keys.length
     ? `${usable} of ${data.keys.length} usable · searched ${present.join(", ")}`
     : `no private keys in ${present.join(", ") || "any configured directory"}`;
+}
+
+// The ceiling lives in config.py. Reading the choices from the API means the
+// dropdown can never offer something the server would reject.
+async function loadJitTtl(select) {
+  const data = await getJSON("/api/jit/ttl");
+  fillSelect(select, data.choices.map((minutes) => ({
+    value: String(minutes),
+    text: formatMinutes(minutes),
+  })));
+  select.value = String(data.default);
+}
+
+function formatMinutes(minutes) {
+  if (minutes < 60) return `${minutes} minutes`;
+  const hours = minutes / 60;
+  return hours === 1 ? "1 hour" : `${hours} hours`;
+}
+
+// Show the wall-clock time the grant dies, not just the duration. "access ends
+// at 18:40" is a thing you can reason about; "240 minutes" is arithmetic.
+function syncExpiryNote() {
+  const note = el("jit-expiry-note");
+  const minutes = Number(jitTtl.value);
+  if (!minutes) {
+    note.textContent = "";
+    return;
+  }
+  const when = new Date(Date.now() + minutes * 60000);
+  note.textContent = `access ends at ${when.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 }
 
 async function loadJitActions(select) {
@@ -328,13 +372,23 @@ function applyRunResult(body, target) {
   const word = body.ok ? "Success" : "Failed";
   const tone = body.ok ? "ok" : "fail";
 
-  setStatus(glyph, `${word}  ·  rc=${body.returncode}  ·  ${target}`, tone);
+  // The run happened either way; persistence_error means the audit row did not
+  // get written. main.py deliberately returns success rather than lying about
+  // the playbook, which only works if the gap is actually shown here.
+  const audit = body.persistence_error ? "  ·  NOT RECORDED" : "";
+
+  setStatus(glyph, `${word}  ·  rc=${body.returncode}  ·  ${target}${audit}`, tone);
   setStat("stat-status", `${glyph} ${word}`, tone);
   setStat("stat-duration", `${body.duration}s`);
 
   let text = body.stdout;
   if (body.stderr) {
     text += `\n--- stderr ---\n${body.stderr}`;
+  }
+  // Prefixed so lineClass() paints it, and put first so it is not buried under
+  // a few hundred lines of ansible output.
+  if (body.persistence_error) {
+    text = `[WARNING] ${body.persistence_error}\n${text}`;
   }
   renderOutput(text);
   outputBox.scrollTop = 0;
@@ -366,6 +420,8 @@ async function runPlaybook() {
     }
 
     applyRunResult(body, target);
+    // A job row was just written, so the history and its count are now stale.
+    loadActivity();
   } catch (error) {
     stopElapsed("");
     setStatus("✕", `Request failed: ${error.message}`, "fail");
@@ -414,6 +470,9 @@ async function runJit() {
     }
 
     applyRunResult(body, target);
+    // The grant list just changed too, so the tile and both tables must not
+    // keep showing what was true before the click.
+    loadActivity();
   } catch (error) {
     stopElapsed("");
     setStatus("✕", `Request failed: ${error.message}`, "fail");
@@ -429,7 +488,162 @@ async function runJit() {
 function syncJitAction() {
   const revoking = jitAction.value === "revoke";
   el("jit-key-field").hidden = revoking;
+  // A revoke closes a grant rather than opening one, so a TTL would be a
+  // setting with nothing to apply to.
+  el("jit-ttl-field").hidden = revoking;
   el("jit-warn").hidden = !revoking;
+  if (!revoking) syncExpiryNote();
+}
+
+// ---------- activity view ----------
+
+// Timestamps arrive as UTC ISO8601 (the server stores UTC so it is
+// unambiguous). Render them in local time, which is what the operator reads.
+function localTime(isoString) {
+  const when = new Date(isoString);
+  return when.toLocaleString([], {
+    month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+}
+
+// "in 42m" / "24m overdue". Overdue is the interesting case: it means the
+// expire command has not run, which is a broken schedule, not a broken grant.
+function relativeTo(isoString) {
+  const deltaMs = new Date(isoString) - Date.now();
+  const minutes = Math.round(Math.abs(deltaMs) / 60000);
+  const text = minutes < 60
+    ? `${minutes}m`
+    : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  return deltaMs >= 0
+    ? { text: `in ${text}`, overdue: false }
+    : { text: `${text} overdue`, overdue: true };
+}
+
+// textContent, never innerHTML: usernames and host names come from the
+// inventory and the database, and neither is markup.
+function addCell(row, text, cssClass = "") {
+  const cell = document.createElement("td");
+  cell.textContent = text;
+  if (cssClass) cell.className = cssClass;
+  row.appendChild(cell);
+  return cell;
+}
+
+function renderGrants(grants) {
+  const body = el("grants-body");
+  body.innerHTML = "";
+
+  setStat("stat-grants", grants.length);
+
+  if (!grants.length) {
+    const row = document.createElement("tr");
+    const cell = addCell(row, "No active grants.");
+    cell.colSpan = 5;
+    body.appendChild(row);
+    el("grants-note").textContent = "";
+    return;
+  }
+
+  let overdueCount = 0;
+  for (const grant of grants) {
+    const row = document.createElement("tr");
+    const due = relativeTo(grant.expires_at);
+    if (due.overdue) overdueCount += 1;
+
+    addCell(row, grant.username, "mono");
+    addCell(row, grant.target_host || `${grant.target_group} (all hosts)`);
+    addCell(row, localTime(grant.granted_at), "mono");
+    addCell(row, `${localTime(grant.expires_at)}  (${due.text})`,
+            due.overdue ? "mono is-overdue" : "mono");
+    addCell(row, grant.status, grant.status === "revoke_failed" ? "is-fail" : "");
+    body.appendChild(row);
+  }
+
+  el("grants-note").textContent = overdueCount
+    ? `${grants.length} active, ${overdueCount} overdue — has the expire schedule run?`
+    : `${grants.length} active`;
+}
+
+function renderJobs(jobs) {
+  const body = el("jobs-body");
+  body.innerHTML = "";
+
+  if (!jobs.length) {
+    const row = document.createElement("tr");
+    const cell = addCell(row, "Nothing has run yet.");
+    cell.colSpan = 8;
+    body.appendChild(row);
+    el("jobs-note").textContent = "";
+    return;
+  }
+
+  for (const job of jobs) {
+    const row = document.createElement("tr");
+    row.className = "is-clickable";
+    const ok = job.returncode === 0;
+
+    addCell(row, job.id, "mono");
+    addCell(row, localTime(job.started_at), "mono");
+    addCell(row, job.playbook);
+    addCell(row, job.action || "—");
+    addCell(row, job.target_host || `${job.target_group} (all)`);
+    addCell(row, ok ? "OK rc=0" : `FAIL rc=${job.returncode}`, ok ? "is-ok" : "is-fail");
+    addCell(row, job.duration === null ? "—" : `${job.duration}s`, "mono");
+    addCell(row, job.triggered_by);
+
+    // Clicking a row pulls that run's output into the panel below. Cheap
+    // history: you can read a revoke nobody watched happen.
+    row.addEventListener("click", () => showJob(job.id));
+    body.appendChild(row);
+  }
+
+  el("jobs-note").textContent = `${jobs.length} most recent — click a row to see its output`;
+}
+
+// /api/jobs omits stdout and stderr because they can be megabytes, so the full
+// row is fetched only when a row is actually clicked.
+async function showJob(jobId) {
+  try {
+    const job = await getJSON(`/api/jobs/${jobId}`);
+    // A job with no action came from the Run tab; one with an action is JIT.
+    switchView(job.action === null ? "run" : "jit");
+
+    commandBox.textContent = job.command;
+    commandBox.classList.remove("is-stale");
+    commandBadge.textContent = `job ${job.id}`;
+    commandBadge.className = "badge live";
+
+    const ok = job.returncode === 0;
+    setStatus(ok ? "✓" : "✕",
+              `Job ${job.id}  ·  rc=${job.returncode}  ·  ${job.triggered_by}`,
+              ok ? "ok" : "fail");
+    stopElapsed(job.duration === null ? "" : `${job.duration}s`);
+
+    let text = job.stdout || "";
+    if (job.stderr) text += `\n--- stderr ---\n${job.stderr}`;
+    renderOutput(text);
+    outputBox.scrollTop = 0;
+  } catch (error) {
+    renderPlain(error.message, "ln ln-fail");
+  }
+}
+
+async function loadActivity() {
+  try {
+    const [grantsData, jobsData] = await Promise.all([
+      getJSON("/api/grants"),
+      getJSON("/api/jobs"),
+    ]);
+    renderGrants(grantsData.grants);
+    renderJobs(jobsData.jobs);
+  } catch (error) {
+    // The database can be down while the inventory endpoints still work, so
+    // say so here rather than letting the tables sit silently empty.
+    el("grants-note").textContent = `Could not load: ${error.message}`;
+    el("jobs-note").textContent = "";
+    setStat("stat-grants", "—");
+  }
 }
 
 // ---------- inventory view ----------
@@ -485,6 +699,8 @@ jitAction.addEventListener("change", () => {
 // Text fields are debounced; the selects above fire immediately.
 jitUsername.addEventListener("input", refreshJitPreviewSoon);
 jitPublickey.addEventListener("input", refreshJitPreviewSoon);
+// TTL is not part of the command, so it needs no preview - only the note.
+jitTtl.addEventListener("change", syncExpiryNote);
 jitRunButton.addEventListener("click", runJit);
 el("copy").addEventListener("click", copyCommand);
 el("theme-toggle").addEventListener("click", toggleTheme);
@@ -515,6 +731,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadKeys(keySelect, "key-note");
     await loadKeys(jitKey, "jit-key-note");
     await loadJitActions(jitAction);
+    await loadJitTtl(jitTtl);
     if (groupSelect.value) {
       await loadHosts(hostSelect, groupSelect.value);
       await loadHosts(jitHost, jitGroup.value);
@@ -523,6 +740,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadInventoryTable(groups);
     setConnection(true, "inventory loaded");
     refreshPreview();
+    // Last, and not awaited into the inventory error path above: the database
+    // being down must not make the whole dashboard look broken when every
+    // inventory-driven control still works. loadActivity() reports its own
+    // failure inside the Activity panel.
+    loadActivity();
   } catch (error) {
     setConnection(false, "inventory error");
     setStatus("✕", `Could not load inventory: ${error.message}`, "fail");

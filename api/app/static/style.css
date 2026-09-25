@@ -171,7 +171,7 @@ body {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.75rem;
   margin-bottom: 1.25rem;
 }
@@ -413,6 +413,12 @@ pre {
 
 /* ---------- responsive ---------- */
 
+/* Five tiles is too many below ~1100px. This must come BEFORE the 860px
+   query: both match on a narrow screen, and the later rule wins. */
+@media (max-width: 1100px) {
+  .stats { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
@@ -525,3 +531,19 @@ kbd {
   font-size: 0.75rem;
   color: var(--ink-2);
 }
+
+/* Activity view: two stacked panels, same gap as .stack uses elsewhere. */
+#view-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Job history rows are clickable — they load that run into the Output panel. */
+.table tbody tr.is-clickable { cursor: pointer; }
+.table tbody tr.is-clickable:hover { background: var(--surface-2); }
+
+/* An overdue grant is a failure of the expire schedule, so it reads as one. */
+.table td.is-overdue { color: var(--critical); font-weight: 600; }
+.table td.is-ok { color: var(--good); }
+.table td.is-fail { color: var(--critical); }

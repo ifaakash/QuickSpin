@@ -21,6 +21,7 @@
     <div class="nav-tabs" role="tablist">
       <button class="nav-tab is-active" data-view="run" role="tab">Run</button>
       <button class="nav-tab" data-view="jit" role="tab">JIT Access</button>
+      <button class="nav-tab" data-view="activity" role="tab">Activity</button>
       <button class="nav-tab" data-view="inventory" role="tab">Inventory</button>
     </div>
 
@@ -46,6 +47,10 @@
       <div class="stat">
         <span class="stat-label">Hosts in group</span>
         <span class="stat-value" id="stat-hosts">&mdash;</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Active grants</span>
+        <span class="stat-value" id="stat-grants">&mdash;</span>
       </div>
       <div class="stat">
         <span class="stat-label">Last run</span>
@@ -131,6 +136,11 @@
               <textarea id="jit-publickey" rows="4" spellcheck="false"
                         placeholder="ssh-ed25519 AAAAC3... you@laptop"></textarea>
             </div>
+            <div class="field" id="jit-ttl-field">
+              <label for="jit-ttl">Expires after</label>
+              <select id="jit-ttl"></select>
+              <p class="hint" id="jit-expiry-note"></p>
+            </div>
             <p class="warn-note" id="jit-warn" hidden>
               Revoke deletes the account and its home directory. There is no undo.
             </p>
@@ -171,6 +181,37 @@
 
         </div>
     </div>
+
+    <!-- ============ ACTIVITY VIEW ============ -->
+    <section class="view" id="view-activity" hidden>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Active grants</h2>
+          <span class="panel-note" id="grants-note"></span>
+        </div>
+        <table class="table" id="grants-table">
+          <thead>
+            <tr><th>User</th><th>Target</th><th>Granted</th><th>Expires</th><th>Status</th></tr>
+          </thead>
+          <tbody id="grants-body"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Job history</h2>
+          <span class="panel-note" id="jobs-note"></span>
+        </div>
+        <table class="table" id="jobs-table">
+          <thead>
+            <tr><th>#</th><th>When</th><th>Playbook</th><th>Action</th><th>Target</th><th>Result</th><th>Took</th><th>By</th></tr>
+          </thead>
+          <tbody id="jobs-body"></tbody>
+        </table>
+      </section>
+
+    </section>
 
     <!-- ============ INVENTORY VIEW ============ -->
     <section class="view" id="view-inventory" hidden>
