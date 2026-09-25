@@ -27,18 +27,25 @@ spec:
       containers:
         - name: db
           image: mysql:8.4
+          resources:
+            requests:
+              cpu: 200m
+              memory: 500Mi
+            limits:
+              cpu: 300m
+              memory: 600Mi
           volumeMounts:
             - name: devopshub-db-volume
               mountPath: /var/lib/mysql
-#          readinessProbe:
-#            exec:
-#              command:
-#                - mysqladmin
-#                - ping
-#                - -h
-#                - localhost
-#            initialDelaySeconds: 5
-#            periodSeconds: 10
+#         readinessProbe:
+#           exec:
+#             command:
+#               - mysqladmin
+#               - ping
+#               - -h
+#               - localhost
+#           initialDelaySeconds: 5
+#           periodSeconds: 10
           env:
             - name: MYSQL_DATABASE
               value: devopshub
