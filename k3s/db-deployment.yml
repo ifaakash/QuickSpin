@@ -44,7 +44,7 @@ spec:
              command:
                - sh
                - -c
-               - 'mysql -h 127.0.0.1 -uroot -p"$MYSQL_PASSWORD" -e "SELECT 1"'
+               - 'mysql -h 127.0.0.1 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1"'
             initialDelaySeconds: 5
             periodSeconds: 10
           env:
