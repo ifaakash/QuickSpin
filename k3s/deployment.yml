@@ -16,15 +16,15 @@ spec:
       labels:
         app: devopshub
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - k3d-worker-1-0
+#      affinity:
+#        nodeAffinity:
+#          requiredDuringSchedulingIgnoredDuringExecution:
+#            nodeSelectorTerms:
+#              - matchExpressions:
+#                  - key: kubernetes.io/hostname
+#                    operator: In
+#                    values:
+#                      - k3d-worker-1-0
       containers:
         - name: devopshub
           image: devopshub:v3

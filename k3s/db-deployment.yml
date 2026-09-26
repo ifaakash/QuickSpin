@@ -17,15 +17,15 @@ spec:
       labels:
         app: devopshub-db
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - k3d-worker-1-0
+#      affinity:
+#        nodeAffinity:
+#          requiredDuringSchedulingIgnoredDuringExecution:
+#            nodeSelectorTerms:
+#              - matchExpressions:
+#                  - key: kubernetes.io/hostname
+#                    operator: In
+#                    values:
+#                      - k3d-worker-1-0
       containers:
         - name: db
           image: mysql:8.4
