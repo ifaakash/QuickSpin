@@ -7,7 +7,12 @@ metadata:
   labels:
     deployment: devopshub
 spec:
-  replicas: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: devopshub
@@ -16,6 +21,7 @@ spec:
       labels:
         app: devopshub
     spec:
+      terminationGracePeriodSeconds: 30
 #      affinity:
 #        nodeAffinity:
 #          requiredDuringSchedulingIgnoredDuringExecution:
@@ -38,6 +44,9 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "5"] }
           readinessProbe:
             httpGet:
               path: /healthz
@@ -46,7 +55,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: 2
           envFrom:
             - configMapRef:
                 name: devopshub-config
