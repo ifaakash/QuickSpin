@@ -48,6 +48,7 @@ spec:
                # - 'mysql -h 127.0.0.1 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1"'
             initialDelaySeconds: 5
             timeoutSeconds: 5
+            failureThreshold: 3
             periodSeconds: 10
           env:
             - name: MYSQL_DATABASE
