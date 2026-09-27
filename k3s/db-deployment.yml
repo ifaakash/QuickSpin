@@ -44,8 +44,10 @@ spec:
              command:
                - sh
                - -c
-               - 'mysql -h 127.0.0.1 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1"'
+               - 'mysqladmin  -u"$MYSQL_USER" -p"$MYSQL_PASSWORD"'
+               # - 'mysql -h 127.0.0.1 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1"'
             initialDelaySeconds: 5
+            timeoutSeconds: 5
             periodSeconds: 10
           env:
             - name: MYSQL_DATABASE
