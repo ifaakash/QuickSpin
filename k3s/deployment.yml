@@ -64,7 +64,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 2
+            failureThreshold: 3
           envFrom:
             - configMapRef:
                 name: devopshub-config
