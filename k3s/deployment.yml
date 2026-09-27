@@ -62,7 +62,7 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 2
+            timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 2
           envFrom:
