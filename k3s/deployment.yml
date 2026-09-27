@@ -31,7 +31,7 @@ spec:
                     operator: NotIn
                     values:
                       - k3d-mac-server-0
-      #      affinity:
+#      affinity:
 #        nodeAffinity:
 #          requiredDuringSchedulingIgnoredDuringExecution:
 #            nodeSelectorTerms:
