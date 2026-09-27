@@ -22,7 +22,16 @@ spec:
         app: devopshub
     spec:
       terminationGracePeriodSeconds: 30
-#      affinity:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k3d-mac-server-0
+      #      affinity:
 #        nodeAffinity:
 #          requiredDuringSchedulingIgnoredDuringExecution:
 #            nodeSelectorTerms:
@@ -46,7 +55,7 @@ spec:
               memory: 256Mi
           lifecycle:
             preStop:
-              exec: { command: ["sleep", "5"] }
+              exec: {command: ["sleep", "5"]}
           readinessProbe:
             httpGet:
               path: /healthz
