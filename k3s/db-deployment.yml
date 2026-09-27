@@ -50,6 +50,15 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
             periodSeconds: 10
+          startupProbe:
+            exec:
+             command:
+               - sh
+               - -c
+               - 'mysqladmin -h 127.0.0.1  -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" status'
+            timeoutSeconds: 5
+            failureThreshold: 12
+            periodSeconds: 5
           env:
             - name: MYSQL_DATABASE
               value: devopshub
