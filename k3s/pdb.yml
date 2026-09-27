@@ -1,5 +1,5 @@
 apiVersion: policy/v1
-kind: PodDistributionBudget
+kind: PodDisruptionBudget
 metadata:
   name: devopshub-pdb
   namespace: devopshub-development
