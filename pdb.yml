@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: policy/v1
 kind: PodDistributionBudget
 metadata:
   name: devopshub-pdb
@@ -6,7 +6,6 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: devopshub-deployment
-  # Define the budget using EXACTLY ONE of the two fields below:
-  minAvailable: 2
+      app: devopshub-db
+  minAvailable: 1
   # maxUnavailable: 1
