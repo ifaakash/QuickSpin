@@ -70,6 +70,7 @@ spec:
              path: /healthz
              port: 8000
             periodSeconds: 5
+            timeoutSeconds: 5
             failureThreshold: 12
           envFrom:
             - configMapRef:
