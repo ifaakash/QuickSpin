@@ -88,7 +88,10 @@ case "${1:-today}" in
   note)
     id="${2:?usage: track.sh note <id> \"<text>\"}"
     body=$(jq -nc --arg c "<p>${3:?note text required}</p>" '{comment:$c}')
-    api PUT "/tasks/$id/comments" -d "$body" | jq -r '"noted on #\(.id // '"$id"')"'
+    # The response's .id is the COMMENT id, not the task id — printing it
+    # reads as "noted on #2" when the note went to task 13. Use $id instead.
+    api PUT "/tasks/$id/comments" -d "$body" \
+      | jq -e -r --arg t "$id" '"noted on #\($t) (comment \(.id))"'
     ;;
   due)
     # Pulling a task into today's view is the core daily action, so it gets a
