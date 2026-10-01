@@ -3,233 +3,242 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DevOpsHub &middot; QuickSpin</title>
+  <title>QuickSpin &middot; DevOpsHub</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Top bar. Both tabs are real views backed by the API. -->
-  <nav class="navbar">
-    <div class="nav-brand">
-      <span class="logo" aria-hidden="true">&#9679;</span>
-      <span class="brand-name">DevOpsHub</span>
-      <span class="brand-sep">/</span>
-      <span class="brand-repo">QuickSpin</span>
-    </div>
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
 
-    <div class="nav-tabs" role="tablist">
-      <button class="nav-tab is-active" data-view="run" role="tab">Run</button>
-      <button class="nav-tab" data-view="jit" role="tab">JIT Access</button>
-      <button class="nav-tab" data-view="activity" role="tab">Activity</button>
-      <button class="nav-tab" data-view="inventory" role="tab">Inventory</button>
-    </div>
+  <div class="shell">
 
-    <div class="nav-right">
+    <!-- Top dock. A new view = one .nav-tab with data-view + one hidden section.
+         Features that are not built yet sit as .nav-soon (no data-view). -->
+    <header class="navbar glass">
+      <div class="nav-brand">
+        <img src="favicon.svg" alt="">
+        <div class="brand-text">
+          <span class="brand-name">QuickSpin</span>
+          <span class="brand-sub">DevOpsHub</span>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" role="tablist">
+        <button class="nav-tab is-active" data-view="run" role="tab">Run</button>
+        <button class="nav-tab" data-view="jit" role="tab">JIT Access <span class="nav-count" id="nav-grants">&mdash;</span></button>
+        <button class="nav-soon" disabled title="Provision EC2 from quickspin.yml — coming soon">Provision <span class="soon">Soon</span></button>
+        <span class="nav-divider" aria-hidden="true"></span>
+        <button class="nav-tab" data-view="activity" role="tab">Activity <span class="nav-alert" id="nav-overdue" hidden></span></button>
+        <button class="nav-tab" data-view="inventory" role="tab">Inventory</button>
+      </nav>
+
+      <div class="nav-right">
+        <button class="nav-soon" disabled title="Coming soon">Users &amp; roles <span class="soon">Soon</span></button>
+        <button class="nav-soon" disabled title="Coming soon">Settings <span class="soon">Soon</span></button>
+      </div>
       <span class="conn" id="conn">
         <span class="conn-dot" id="conn-dot"></span>
         <span id="conn-text">connecting</span>
       </span>
-      <button class="icon-button" id="theme-toggle" title="Toggle light / dark">
-        <span id="theme-icon">&#9681;</span>
-      </button>
-    </div>
-  </nav>
+    </header>
 
-  <main class="shell">
-
-    <!-- Real numbers only: counts come from the inventory, run stats from the last run. -->
-    <section class="stats">
-      <div class="stat">
-        <span class="stat-label">Groups</span>
-        <span class="stat-value" id="stat-groups">&mdash;</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Hosts in group</span>
-        <span class="stat-value" id="stat-hosts">&mdash;</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Active grants</span>
-        <span class="stat-value" id="stat-grants">&mdash;</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Last run</span>
-        <span class="stat-value" id="stat-status">&mdash;</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Duration</span>
-        <span class="stat-value" id="stat-duration">&mdash;</span>
-      </div>
+    <section class="stats glass">
+      <div class="stat"><span class="stat-label">Groups</span><span class="stat-value" id="stat-groups">&mdash;</span></div>
+      <div class="stat"><span class="stat-label">Hosts in group</span><span class="stat-value" id="stat-hosts">&mdash;</span></div>
+      <div class="stat"><span class="stat-label">Active grants</span><span class="stat-value" id="stat-grants">&mdash;</span></div>
+      <div class="stat"><span class="stat-label">Last run</span><span class="stat-value" id="stat-status">&mdash;</span></div>
+      <div class="stat"><span class="stat-label">Duration</span><span class="stat-value" id="stat-duration">&mdash;</span></div>
     </section>
 
-    <!-- Run and JIT swap only the left panel. Command and Output are one
-         shared instance, so switching tabs keeps the last result on screen. -->
+    <!-- Run and JIT swap only the config panel. Command, Output and the rail are shared. -->
     <div class="layout" id="layout">
 
-        <aside class="panel panel-config" id="config-run">
-          <div class="panel-head">
-            <h2>Configuration</h2>
+      <aside class="panel panel-config glass" id="config-run">
+        <div class="panel-head"><h2>Configuration</h2></div>
+        <div class="panel-body">
+          <div class="field">
+            <span class="field-label">Playbook</span>
+            <!-- A new playbook = one more .pb-option. value is the playbook file. -->
+            <div class="pb-list" role="radiogroup" id="playbooks">
+              <label class="pb-option">
+                <input type="radio" name="playbook" value="playbook-list-users.yml" checked>
+                <span class="pb-radio"></span>
+                <span class="pb-text">
+                  <span class="pb-name">List users</span>
+                  <span class="pb-desc">Read human accounts from /etc/passwd</span>
+                  <span class="pb-file">playbook-list-users.yml</span>
+                </span>
+              </label>
+              <label class="pb-option">
+                <input type="radio" name="playbook" value="playbook-ping.yml">
+                <span class="pb-radio"></span>
+                <span class="pb-text">
+                  <span class="pb-name">Ping</span>
+                  <span class="pb-desc">Prove Ansible can reach the host and run Python</span>
+                  <span class="pb-file">playbook-ping.yml</span>
+                </span>
+              </label>
+              <label class="pb-option">
+                <input type="radio" name="playbook" value="playbook-install-package.yml">
+                <span class="pb-radio"></span>
+                <span class="pb-text">
+                  <span class="pb-name">Install packages</span>
+                  <span class="pb-desc">From each instance's Packages tag. Cloud hosts only</span>
+                  <span class="pb-file">playbook-install-package.yml</span>
+                </span>
+              </label>
+            </div>
           </div>
-          <div class="panel-body">
-            <div class="field">
-              <label for="group">Group</label>
-              <select id="group"></select>
-            </div>
-            <div class="field">
-              <label for="host">Host</label>
-              <select id="host"></select>
-            </div>
-            <div class="field">
-              <label for="user">Run as</label>
-              <select id="user"></select>
-            </div>
-            <div class="field">
-              <label for="key">Private key</label>
-              <select id="key"></select>
-              <p class="field-note" id="key-note"></p>
-            </div>
-            <div class="field">
-              <label>Playbook</label>
-              <div class="static-value">playbook-list-users.yml</div>
-            </div>
-            <button id="run" class="run-button">
-              <span class="spinner" aria-hidden="true"></span>
-              <span id="run-label">Run playbook</span>
-            </button>
-            <p class="hint">or press <kbd>⌘</kbd><kbd>↵</kbd></p>
+          <div class="field">
+            <label for="group">Group</label>
+            <select id="group"></select>
           </div>
-        </aside>
-
-        <aside class="panel panel-config" id="config-jit" hidden>
-          <div class="panel-head">
-            <h2>JIT access</h2>
+          <div class="field">
+            <label for="host">Host</label>
+            <select id="host"></select>
           </div>
-          <div class="panel-body">
-            <div class="field">
-              <label for="jit-group">Group</label>
-              <select id="jit-group"></select>
-            </div>
-            <div class="field">
-              <label for="jit-host">Host</label>
-              <select id="jit-host"></select>
-            </div>
-            <div class="field">
-              <label for="jit-user">Run as</label>
-              <select id="jit-user"></select>
-            </div>
-            <div class="field">
-              <label for="jit-key">Private key</label>
-              <select id="jit-key"></select>
-              <p class="field-note" id="jit-key-note"></p>
-            </div>
-            <div class="field">
-              <label for="jit-action">Action</label>
-              <select id="jit-action"></select>
-            </div>
-            <div class="field">
-              <label for="jit-username">JIT username</label>
-              <input type="text" id="jit-username" placeholder="jit_alice"
-                     autocomplete="off" spellcheck="false">
-            </div>
-            <div class="field" id="jit-key-field">
-              <label for="jit-publickey">Public key</label>
-              <textarea id="jit-publickey" rows="4" spellcheck="false"
-                        placeholder="ssh-ed25519 AAAAC3... you@laptop"></textarea>
-            </div>
-            <div class="field" id="jit-ttl-field">
-              <label for="jit-ttl">Expires after</label>
-              <select id="jit-ttl"></select>
-              <p class="hint" id="jit-expiry-note"></p>
-            </div>
-            <p class="warn-note" id="jit-warn" hidden>
-              Revoke deletes the account and its home directory. There is no undo.
-            </p>
-            <div class="field">
-              <label>Playbook</label>
-              <div class="static-value">playbook-jit-access.yml</div>
-            </div>
-            <button id="jit-run" class="run-button">
-              <span class="spinner" aria-hidden="true"></span>
-              <span id="jit-run-label">Run playbook</span>
-            </button>
-            <p class="hint">or press <kbd>⌘</kbd><kbd>↵</kbd></p>
+          <div class="field">
+            <label for="user">Run as</label>
+            <select id="user"></select>
           </div>
-        </aside>
-
-        <div class="stack">
-
-          <!-- The command panel. Rendered from the API so it cannot drift. -->
-          <section class="panel">
-            <div class="panel-head">
-              <h2>Command</h2>
-              <div class="panel-actions">
-                <span class="badge" id="cmd-badge">preview</span>
-                <button class="text-button" id="copy">Copy</button>
-              </div>
-            </div>
-            <pre class="command" id="command">&mdash;</pre>
-          </section>
-
-          <section class="panel">
-            <div class="panel-head">
-              <h2>Output</h2>
-              <span class="elapsed" id="elapsed"></span>
-          <span class="status" id="status">No run yet</span>
-            </div>
-            <pre class="output" id="output">Pick a target and hit Run.</pre>
-          </section>
-
+          <div class="field">
+            <label for="key">Private key</label>
+            <select id="key"></select>
+            <p class="field-note" id="key-note"></p>
+          </div>
+          <button id="run" class="run-button">
+            <span class="spinner" aria-hidden="true"></span>
+            <span id="run-label">Run playbook</span>
+          </button>
+          <p class="hint center">or press <kbd>⌘</kbd> <kbd>↵</kbd></p>
         </div>
+      </aside>
+
+      <aside class="panel panel-config glass" id="config-jit" hidden>
+        <div class="panel-head"><h2>JIT access</h2></div>
+        <div class="panel-body">
+          <!-- The segmented control drives the real #jit-action select (bindSegments). -->
+          <div class="segmented" data-select-for="jit-action">
+            <button type="button" data-value="provision">Provision</button>
+            <button type="button" data-value="revoke">Revoke</button>
+          </div>
+          <select id="jit-action" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
+          <div class="field">
+            <label for="jit-group">Group</label>
+            <select id="jit-group"></select>
+          </div>
+          <div class="field">
+            <label for="jit-host">Host</label>
+            <select id="jit-host"></select>
+          </div>
+          <div class="field">
+            <label for="jit-user">Run as</label>
+            <select id="jit-user"></select>
+          </div>
+          <div class="field">
+            <label for="jit-key">Private key</label>
+            <select id="jit-key"></select>
+            <p class="field-note" id="jit-key-note"></p>
+          </div>
+          <div class="field">
+            <label for="jit-username">JIT username</label>
+            <input type="text" id="jit-username" placeholder="jit_alice" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field" id="jit-key-field">
+            <label for="jit-publickey">Public key</label>
+            <textarea id="jit-publickey" rows="3" spellcheck="false" placeholder="ssh-ed25519 AAAAC3... you@laptop"></textarea>
+          </div>
+          <div class="field" id="jit-ttl-field">
+            <span class="field-label">Expires after</span>
+            <div class="chips" data-select-for="jit-ttl"></div>
+            <select id="jit-ttl" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
+            <p class="hint" id="jit-expiry-note"></p>
+          </div>
+          <p class="warn-note" id="jit-warn" hidden>
+            Revoke deletes the account and its home directory. There is no undo.
+          </p>
+          <div class="static-value">Playbook <code>playbook-jit-access.yml</code></div>
+          <button id="jit-run" class="run-button">
+            <span class="spinner" aria-hidden="true"></span>
+            <span id="jit-run-label">Run playbook</span>
+          </button>
+          <p class="hint center">or press <kbd>⌘</kbd> <kbd>↵</kbd></p>
+        </div>
+      </aside>
+
+      <div class="stack">
+        <section class="panel glass">
+          <div class="panel-head">
+            <h2>Command</h2>
+            <div class="panel-actions">
+              <span class="badge" id="cmd-badge">preview</span>
+              <button class="text-button" id="copy">Copy</button>
+            </div>
+          </div>
+          <pre class="command" id="command">&mdash;</pre>
+        </section>
+
+        <section class="panel glass">
+          <div class="panel-head">
+            <h2>Output</h2>
+            <span class="elapsed" id="elapsed"></span>
+            <span class="status" id="status">No run yet</span>
+          </div>
+          <pre class="output" id="output">Pick a target and hit Run.</pre>
+        </section>
+      </div>
+
+      <!-- Context rail. New widgets stack here as more .panel.glass sections. -->
+      <aside class="rail">
+        <section class="panel glass">
+          <div class="panel-head"><h2>Live grants</h2><span class="panel-note" id="rail-grants-count"></span></div>
+          <ul class="rail-list" id="rail-grants"></ul>
+        </section>
+        <section class="panel glass">
+          <div class="panel-head"><h2>Recent jobs</h2><button class="link-button" id="rail-view-all">View all</button></div>
+          <div class="rail-list" id="rail-jobs"></div>
+        </section>
+      </aside>
     </div>
 
     <!-- ============ ACTIVITY VIEW ============ -->
     <section class="view" id="view-activity" hidden>
+      <div class="view-head">
+        <h2>Active grants</h2>
+        <span class="panel-note" id="grants-note"></span>
+      </div>
+      <div class="card-grid" id="grants-body"></div>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Active grants</h2>
-          <span class="panel-note" id="grants-note"></span>
-        </div>
-        <table class="table" id="grants-table">
-          <thead>
-            <tr><th>User</th><th>Target</th><th>Granted</th><th>Expires</th><th>Status</th></tr>
-          </thead>
-          <tbody id="grants-body"></tbody>
-        </table>
-      </section>
-
-      <section class="panel">
+      <section class="panel glass">
         <div class="panel-head">
           <h2>Job history</h2>
           <span class="panel-note" id="jobs-note"></span>
         </div>
-        <table class="table" id="jobs-table">
-          <thead>
-            <tr><th>#</th><th>When</th><th>Playbook</th><th>Action</th><th>Target</th><th>Result</th><th>Took</th><th>By</th></tr>
-          </thead>
-          <tbody id="jobs-body"></tbody>
-        </table>
+        <div class="table-wrap">
+          <table class="table" id="jobs-table">
+            <thead>
+              <tr><th>#</th><th>When</th><th>Playbook</th><th>Action</th><th>Target</th><th>Result</th><th>Took</th><th>By</th></tr>
+            </thead>
+            <tbody id="jobs-body"></tbody>
+          </table>
+        </div>
       </section>
-
     </section>
 
     <!-- ============ INVENTORY VIEW ============ -->
     <section class="view" id="view-inventory" hidden>
-      <section class="panel">
-        <div class="panel-head">
-          <h2>dashboard.ini</h2>
-          <span class="panel-note" id="inv-note"></span>
-        </div>
-        <table class="table" id="inv-table">
-          <thead>
-            <tr><th>Group</th><th>Host</th><th>ansible_host</th></tr>
-          </thead>
-          <tbody id="inv-body"></tbody>
-        </table>
-      </section>
+      <div class="view-head">
+        <h2>dashboard.ini</h2>
+        <span class="panel-note" id="inv-note"></span>
+      </div>
+      <div class="card-grid wide" id="inv-body"></div>
     </section>
 
-  </main>
+  </div>
 
   <script src="app.js"></script>
 </body>

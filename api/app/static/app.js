@@ -1,4 +1,6 @@
 // DevOpsHub dashboard. Plain fetch calls against the FastAPI service.
+// Frost theme: adds the playbook picker, segmented/chip controls that drive the
+// real <select>s, the context rail, and card renderers for grants + inventory.
 
 const el = (id) => document.getElementById(id);
 
@@ -68,7 +70,15 @@ function currentRequest() {
     host: hostSelect.value,
     user: userSelect.value,
     private_key: keySelect.value,
+    // Backend: /api/preview and /api/run must accept this and map it through an
+    // allowlist of playbook files (never pass a user string to ansible-playbook).
+    playbook: selectedPlaybook(),
   };
+}
+
+function selectedPlaybook() {
+  const checked = document.querySelector('input[name="playbook"]:checked');
+  return checked ? checked.value : "playbook-list-users.yml";
 }
 
 function currentJitRequest() {
@@ -119,15 +129,47 @@ function switchView(name) {
   if (name === "activity") loadActivity();
 }
 
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  el("theme-icon").textContent = theme === "dark" ? "◑" : "◐";
-  localStorage.setItem("devopshub-theme", theme);
+// ---------- segmented controls + chips ----------
+// Each [data-select-for] container mirrors a real <select>. The select stays the
+// source of truth, so every existing reader (currentJitRequest, change handlers)
+// keeps working unchanged.
+
+const TTL_SHORT = { 15: "15m", 60: "1h", 240: "4h", 480: "8h" };
+
+function buildChips(container, select) {
+  container.innerHTML = "";
+  for (const option of select.options) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.value = option.value;
+    button.textContent = TTL_SHORT[option.value] || option.textContent;
+    button.title = option.textContent;
+    container.appendChild(button);
+  }
 }
 
-function toggleTheme() {
-  const current = document.documentElement.dataset.theme;
-  applyTheme(current === "dark" ? "light" : "dark");
+function syncSegments() {
+  for (const group of document.querySelectorAll("[data-select-for]")) {
+    const select = el(group.dataset.selectFor);
+    for (const button of group.querySelectorAll("button")) {
+      const on = button.dataset.value === select.value;
+      button.classList.toggle("is-on", on);
+      button.setAttribute("aria-pressed", on);
+    }
+  }
+}
+
+function bindSegments() {
+  for (const group of document.querySelectorAll("[data-select-for]")) {
+    group.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-value]");
+      if (!button) return;
+      const select = el(group.dataset.selectFor);
+      select.value = button.dataset.value;
+      select.dispatchEvent(new Event("change"));
+      syncSegments();
+    });
+  }
 }
 
 // ---------- stat tiles ----------
@@ -480,7 +522,7 @@ async function runJit() {
   } finally {
     jitRunButton.disabled = false;
     jitRunButton.classList.remove("is-busy");
-    el("jit-run-label").textContent = "Run playbook";
+    syncJitAction();
   }
 }
 
@@ -492,6 +534,11 @@ function syncJitAction() {
   // setting with nothing to apply to.
   el("jit-ttl-field").hidden = revoking;
   el("jit-warn").hidden = !revoking;
+  jitRunButton.classList.toggle("is-danger", revoking);
+  if (!jitRunButton.classList.contains("is-busy")) {
+    el("jit-run-label").textContent = revoking ? "Revoke access" : "Run playbook";
+  }
+  syncSegments();
   if (!revoking) syncExpiryNote();
 }
 
@@ -535,39 +582,105 @@ function renderGrants(grants) {
   body.innerHTML = "";
 
   setStat("stat-grants", grants.length);
+  el("nav-grants").textContent = grants.length;
+  renderRailGrants(grants);
 
   if (!grants.length) {
-    const row = document.createElement("tr");
-    const cell = addCell(row, "No active grants.");
-    cell.colSpan = 5;
-    body.appendChild(row);
+    body.appendChild(make("div", "No active grants.", "grant-empty glass"));
     el("grants-note").textContent = "";
+    el("nav-overdue").hidden = true;
     return;
   }
 
   let overdueCount = 0;
   for (const grant of grants) {
-    const row = document.createElement("tr");
     const due = relativeTo(grant.expires_at);
     if (due.overdue) overdueCount += 1;
+    const bad = due.overdue || grant.status === "revoke_failed";
 
-    addCell(row, grant.username, "mono");
-    addCell(row, grant.target_host || `${grant.target_group} (all hosts)`);
-    addCell(row, localTime(grant.granted_at), "mono");
-    addCell(row, `${localTime(grant.expires_at)}  (${due.text})`,
-            due.overdue ? "mono is-overdue" : "mono");
-    addCell(row, grant.status, grant.status === "revoke_failed" ? "is-fail" : "");
-    body.appendChild(row);
+    const card = make("article", "", "grant-card glass");
+    const top = make("div", "", "grant-card-top");
+    top.append(
+      make("span", grant.username, "grant-user"),
+      make("span", grant.status === "revoke_failed" ? "revoke failed" : grant.status, `pill ${bad ? "fail" : "ok"}`),
+    );
+    const meta = make("div", "", "grant-meta");
+    meta.append(
+      metaItem("Granted", localTime(grant.granted_at)),
+      metaItem("Expires", `${localTime(grant.expires_at)} (${due.text})`, due.overdue ? "is-overdue" : ""),
+    );
+    card.append(top, make("span", grant.target_host || `${grant.target_group} (all hosts)`, "grant-target"), meta);
+    body.appendChild(card);
   }
 
+  el("nav-overdue").hidden = overdueCount === 0;
   el("grants-note").textContent = overdueCount
     ? `${grants.length} active, ${overdueCount} overdue — has the expire schedule run?`
     : `${grants.length} active`;
 }
 
+// Small DOM helpers for the card renderers. textContent only, never markup.
+function make(tag, text = "", className = "") {
+  const node = document.createElement(tag);
+  if (text) node.textContent = text;
+  if (className) node.className = className;
+  return node;
+}
+
+function metaItem(label, value, className = "") {
+  const item = make("span", "", className);
+  item.append(make("b", label), document.createTextNode(value));
+  return item;
+}
+
+function renderRailGrants(grants) {
+  const list = el("rail-grants");
+  list.innerHTML = "";
+  el("rail-grants-count").textContent = grants.length;
+  if (!grants.length) {
+    list.appendChild(make("li", "No active grants.", "rail-empty"));
+    return;
+  }
+  for (const grant of grants) {
+    const due = relativeTo(grant.expires_at);
+    const bad = due.overdue || grant.status === "revoke_failed";
+    const item = make("li", "", "rail-item");
+    const main = make("div", "", "rail-main");
+    main.append(
+      make("span", grant.username, "rail-title mono"),
+      make("span", grant.target_host || `${grant.target_group} (all hosts)`, "rail-sub"),
+    );
+    item.append(main, make("span", due.text, `pill ${bad ? "fail" : "ok"}`));
+    list.appendChild(item);
+  }
+}
+
+function renderRailJobs(jobs) {
+  const list = el("rail-jobs");
+  list.innerHTML = "";
+  if (!jobs.length) {
+    list.appendChild(make("div", "Nothing has run yet.", "rail-empty"));
+    return;
+  }
+  for (const job of jobs.slice(0, 4)) {
+    const ok = job.returncode === 0;
+    const item = make("button", "", "rail-item");
+    item.type = "button";
+    const main = make("div", "", "rail-main");
+    main.append(
+      make("span", `${job.action ? "JIT" : "Run"} · ${job.target_host || `${job.target_group} (all)`}`, "rail-title"),
+      make("span", `${localTime(job.started_at)} · ${job.triggered_by}`, "rail-sub"),
+    );
+    item.append(make("span", `#${job.id}`, "rail-id"), main, make("span", ok ? "OK" : `rc=${job.returncode}`, `pill ${ok ? "ok" : "fail"}`));
+    item.addEventListener("click", () => showJob(job.id));
+    list.appendChild(item);
+  }
+}
+
 function renderJobs(jobs) {
   const body = el("jobs-body");
   body.innerHTML = "";
+  renderRailJobs(jobs);
 
   if (!jobs.length) {
     const row = document.createElement("tr");
@@ -608,6 +721,10 @@ async function showJob(jobId) {
     const job = await getJSON(`/api/jobs/${jobId}`);
     // A job with no action came from the Run tab; one with an action is JIT.
     switchView(job.action === null ? "run" : "jit");
+    if (job.action === null) {
+      const radio = document.querySelector(`input[name="playbook"][value="${job.playbook}"]`);
+      if (radio) radio.checked = true;
+    }
 
     commandBox.textContent = job.command;
     commandBox.classList.remove("is-stale");
@@ -648,6 +765,8 @@ async function loadActivity() {
 
 // ---------- inventory view ----------
 
+// One glass card per group. Everything comes out of the inventory file, so it
+// goes in as text, never as markup.
 async function loadInventoryTable(groups) {
   const body = el("inv-body");
   body.innerHTML = "";
@@ -655,19 +774,19 @@ async function loadInventoryTable(groups) {
 
   for (const group of groups) {
     const data = await getJSON(`/api/groups/${encodeURIComponent(group)}/hosts`);
+    hostCount += data.hosts.length;
+    const card = make("section", "", "panel glass");
+    const head = make("div", "", "panel-head");
+    head.append(make("h2", group), make("span", `${data.hosts.length} host${data.hosts.length === 1 ? "" : "s"}`, "pill panel-actions"));
+    card.appendChild(head);
+    const list = make("div", "", "rail-list");
     for (const host of data.hosts) {
-      hostCount += 1;
-      // Everything here comes out of the inventory file, so it goes in as
-      // text, never as markup.
-      const row = document.createElement("tr");
-      for (const [value, cssClass] of [[group, ""], [host.name, ""], [host.ip, "mono"]]) {
-        const cell = document.createElement("td");
-        cell.textContent = value;
-        cell.className = cssClass;
-        row.appendChild(cell);
-      }
-      body.appendChild(row);
+      const row = make("div", "", "host-row");
+      row.append(make("span", host.name), make("span", host.ip, "mono"));
+      list.appendChild(row);
     }
+    card.appendChild(list);
+    body.appendChild(card);
   }
 
   el("inv-note").textContent =
@@ -700,10 +819,14 @@ jitAction.addEventListener("change", () => {
 jitUsername.addEventListener("input", refreshJitPreviewSoon);
 jitPublickey.addEventListener("input", refreshJitPreviewSoon);
 // TTL is not part of the command, so it needs no preview - only the note.
-jitTtl.addEventListener("change", syncExpiryNote);
+jitTtl.addEventListener("change", () => { syncExpiryNote(); syncSegments(); });
+for (const radio of document.querySelectorAll('input[name="playbook"]')) {
+  radio.addEventListener("change", refreshPreview);
+}
+el("rail-view-all").addEventListener("click", () => switchView("activity"));
+bindSegments();
 jitRunButton.addEventListener("click", runJit);
 el("copy").addEventListener("click", copyCommand);
-el("theme-toggle").addEventListener("click", toggleTheme);
 
 // Cmd+Enter (or Ctrl+Enter) runs, from anywhere on the page.
 document.addEventListener("keydown", (event) => {
@@ -719,9 +842,6 @@ for (const tab of document.querySelectorAll(".nav-tab")) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const saved = localStorage.getItem("devopshub-theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  applyTheme(saved || (prefersDark ? "dark" : "light"));
 
   try {
     const groups = await loadGroups(groupSelect);
@@ -732,6 +852,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadKeys(jitKey, "jit-key-note");
     await loadJitActions(jitAction);
     await loadJitTtl(jitTtl);
+    buildChips(document.querySelector('[data-select-for="jit-ttl"]'), jitTtl);
     if (groupSelect.value) {
       await loadHosts(hostSelect, groupSelect.value);
       await loadHosts(jitHost, jitGroup.value);
