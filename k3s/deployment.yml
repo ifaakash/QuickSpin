@@ -22,15 +22,15 @@ spec:
         app: devopshub
     spec:
       terminationGracePeriodSeconds: 30
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values:
-                      - k3d-mac-server-0
+#      affinity:
+#        nodeAffinity:
+#          requiredDuringSchedulingIgnoredDuringExecution:
+#            nodeSelectorTerms:
+#              - matchExpressions:
+#                  - key: kubernetes.io/hostname
+#                    operator: NotIn
+#                    values:
+#                      - k3d-mac-server-0
 #      affinity:
 #        nodeAffinity:
 #          requiredDuringSchedulingIgnoredDuringExecution:
@@ -67,8 +67,8 @@ spec:
             failureThreshold: 3
           startupProbe:
             httpGet:
-             path: /healthz
-             port: 8000
+              path: /healthz
+              port: 8000
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 12
