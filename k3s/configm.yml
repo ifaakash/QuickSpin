@@ -10,4 +10,5 @@ data:
   # directories are skipped.
   SSH_KEY_DIRS: "/secrets:/root/.ssh"
   MYSQL_USER: "devopshub"
-  MYSQL_HOST: "devopshub-db-svc"
+  MYSQL_HOST: "mysql"
+  #MYSQL_HOST: "devopshub-db-svc"
