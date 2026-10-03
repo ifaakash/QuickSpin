@@ -11,3 +11,9 @@ output "vpc_id" {
 output "security_group_id" {
   value = module.networking.security_group_id
 }
+
+
+output "bastion_instance_id" {
+  description = "Instance Id for the bastion server"
+  value       = module.bastion.instance_id
+}
