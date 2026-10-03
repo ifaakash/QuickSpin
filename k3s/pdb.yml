@@ -1,3 +1,5 @@
+---
+
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -9,3 +11,16 @@ spec:
       app: devopshub-db
   minAvailable: 1
   # maxUnavailable: 1
+
+---
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: devopshub-portal-pdb
+  namespace: devopshub-development
+spec:
+  selector:
+    matchLabels:
+      app: devopshub
+  minAvailable: 1
