@@ -32,7 +32,7 @@
          echo "Listing the content of container"
          ls
          mysqldump -u$MYSQL_USER -p$MYSQL_PASSWORD --no-tablespaces devopshub > {{ backup_filename }}
-         ls -1t *-bkp.sql | tail -n +4 | xargs rm -f --
+         ls -1t backup-*.sql | tail -n +4 | xargs rm -f --
          exit
          '
          /usr/local/bin/docker cp mysql:/{{ backup_filename }} {{ LOCAL_PATH }}
