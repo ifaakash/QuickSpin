@@ -16,6 +16,11 @@ on:
         type: boolean
         default: false
         required: false
+      run_apply:
+        description: Run tf apply?
+        type: boolean
+        default: true
+        required: false
 
 permissions:
   id-token: write
@@ -93,7 +98,7 @@ jobs:
   infra-deployment:
     # needs: [extract-config, linting]
     needs: [extract-config]
-    if: github.event.inputs.destroy_infra != 'true'
+    if: github.event.inputs.destroy_infra != 'true' && github.event.inputs.run_apply == 'true'
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
@@ -145,7 +150,7 @@ jobs:
         run: |
           terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
-          terraform apply --auto-approve tfplan
+          # terraform apply --auto-approve tfplan
 
   configuration-management:
     needs: [extract-config, infra-deployment]
