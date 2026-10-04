@@ -24,6 +24,7 @@
     - name: Define the time for backup
       ansible.builtin.set_fact:
           backup_filename: "backup-{{ lookup('pipe', 'date +%s') }}.sql"
+          LOCAL_PATH: "/Users/aakashmac/k3d-backup/mysql-container-bkp/"  
 
     - name: Exec inside the container and take backup
       ansible.builtin.shell: |
@@ -34,15 +35,31 @@
          mysqldump -u$MYSQL_USER -p$MYSQL_PASSWORD --no-tablespaces devopshub > {{ backup_filename }}
          exit
          '
-         /usr/local/bin/docker cp mysql:/{{ backup_filename }} "$LOCAL_PATH"
-      environment:
-         LOCAL_PATH: "/Users/aakashmac/k3d-backup/mysql-container-bkp/" 
+         /usr/local/bin/docker cp mysql:/{{ backup_filename }} {{ LOCAL_PATH }}
       register: docker_output
+
+    - name: Check the file for number of insert in the latest backup
+      args:
+        chdir: "{{ LOCAL_PATH  }}"
+      ansible.builtin.shell: |
+        cat {{ LOCAL_PATH }}/{{ backup_filename  }} | grep -icn "INSERT INTO"
+
+    - name: Sort the file based on latest
+      args:
+        chdir: "{{ LOCAL_PATH  }}"
+      ansible.builtin.shell: |
+        echo "Showing last three backup"
+        ls -lah "{{ LOCAL_PATH  }}" | tail -n 3
+      register: backup_files_list
 
     - name: Print shell output
       ansible.builtin.debug:
         var: shell_output.stdout_lines
 
-    - name: Print the content of docker container
+    - name: Print the name of latest backup file in local
       ansible.builtin.debug:
-        var: docker_output.stdout_lines
+        var: backup_files_list.stdout_lines 
+
+#    - name: Print the content of docker container
+#      ansible.builtin.debug:
+#        var: docker_output.stdout_lines
