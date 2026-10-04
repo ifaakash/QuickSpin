@@ -14,7 +14,6 @@
   tasks:
     - name: Validate if container exists or not
       ansible.builtin.shell: |
-        echo "Validating if the container exists or not"
         /usr/local/bin/docker ps --format '{% raw %}{{.Names}}{% endraw %}' | grep -i "$CONTAINER_NAME"
       environment:
         CONTAINER_NAME: "mysql"
@@ -44,11 +43,10 @@
       ansible.builtin.shell: |
         cat {{ LOCAL_PATH }}/{{ backup_filename  }} | grep -icn "INSERT INTO"
 
-    - name: Sort the file based on latest
+    - name: Sort the file based on latest - last three backup
       args:
         chdir: "{{ LOCAL_PATH  }}"
       ansible.builtin.shell: |
-        echo "Showing last three backup"
         ls -lah "{{ LOCAL_PATH  }}" | tail -n 3
       register: backup_files_list
 
