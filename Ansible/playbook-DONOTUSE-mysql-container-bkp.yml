@@ -15,12 +15,34 @@
     - name: Validate if container exists or not
       ansible.builtin.shell: |
         echo "Validating if the container exists or not"
-        docker ps --format '{% raw %}{{.Names}}{% endraw %}' | grep -i "$CONTAINER_NAME"
+        /usr/local/bin/docker ps --format '{% raw %}{{.Names}}{% endraw %}' | grep -i "$CONTAINER_NAME"
       environment:
         CONTAINER_NAME: "mysql"
       register: shell_output
       failed_when: false
 
+    - name: Define the time for backup
+      ansible.builtin.set_fact:
+          backup_filename: "backup-{{ lookup('pipe', 'date +%s') }}.sql"
+
+    - name: Exec inside the container and take backup
+      ansible.builtin.shell: |
+         echo "Exec inside the container with sh"
+         /usr/local/bin/docker exec mysql /bin/sh -c '
+         echo "Listing the content of container"
+         ls
+         mysqldump -u$MYSQL_USER -p$MYSQL_PASSWORD --no-tablespaces devopshub > {{ backup_filename }}
+         exit
+         '
+         /usr/local/bin/docker cp mysql:/{{ backup_filename }} "$LOCAL_PATH"
+      environment:
+         LOCAL_PATH: "/Users/aakashmac/k3d-backup/mysql-container-bkp/" 
+      register: docker_output
+
     - name: Print shell output
       ansible.builtin.debug:
         var: shell_output.stdout_lines
+
+    - name: Print the content of docker container
+      ansible.builtin.debug:
+        var: docker_output.stdout_lines
