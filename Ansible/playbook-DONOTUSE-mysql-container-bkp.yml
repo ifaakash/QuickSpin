@@ -1,0 +1,26 @@
+---
+
+- name: Backup the mysql container
+  hosts: all
+  become: yes
+  gather_facts: false
+
+#  pre_tasks:
+#    - name: Ensure date is installed in mysql container
+#      ansible.builtin.apt:
+#        name: date
+#        state: present
+
+  tasks:
+    - name: Validate if container exists or not
+      ansible.builtin.shell: |
+        echo "Validating if the container exists or not"
+        docker ps --format '{% raw %}{{.Names}}{% endraw %}' | grep -i "$CONTAINER_NAME"
+      environment:
+        CONTAINER_NAME: "mysql"
+      register: shell_output
+      failed_when: false
+
+    - name: Print shell output
+      ansible.builtin.debug:
+        var: shell_output.stdout_lines
