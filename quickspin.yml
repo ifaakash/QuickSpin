@@ -1,6 +1,7 @@
 global:
   region: "us-east-1"
   project_prefix: "quickspin"
+  is_enabled: "false"
   # Optional overrides
   # created_by: "your-name"
   # role_name: "custom-iam-role"

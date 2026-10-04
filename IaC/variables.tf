@@ -8,6 +8,14 @@ variable "prefix" {
   type        = string
 }
 
+##################### ENABLE/DISABLE RESOURCES #####################
+
+variable "is_enabled" {
+  description = "Flag to enable/disable a resource generation via IaC"
+  type        = bool
+  default     = true
+}
+
 ##################### NETWORKING #####################
 
 variable "vpc_cidr" {

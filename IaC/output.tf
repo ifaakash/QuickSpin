@@ -15,5 +15,6 @@ output "security_group_id" {
 
 output "bastion_instance_id" {
   description = "Instance Id for the bastion server"
-  value       = module.bastion.instance_id
+  value = module.bastion[*].instance_id
+  # value       = len(module.bastion) > 0 ? module.bastion[0].instance_id : null
 }

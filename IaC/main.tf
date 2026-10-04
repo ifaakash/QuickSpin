@@ -95,6 +95,7 @@ module "bastion_eni" {
 
 # Bastion instance will go in public subnet
 module "bastion" {
+  count                 = var.is_enabled ? 1 : 0
   source                = "git::https://github.com/ifaakash/Terraform//Bastion?ref=main"
   network_interface_id  = module.bastion_eni.eni
   instance_profile_name = module.iam.instance_profile_name

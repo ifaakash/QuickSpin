@@ -5,6 +5,7 @@ Example Output (terraform.tfvars.json):
 {
     "region": "us-east-1",
     "prefix": "quickspin",
+    "is_enabled": "false",
     "created_by": "your-name",
     "user_ip": "49.36.144.148/32",
     "vpc_cidr": "10.0.0.0/16",
@@ -61,6 +62,11 @@ def main():
     global_config = config["global"]
     if "region" not in global_config or "project_prefix" not in global_config:
         error_exit("Missing 'region' or 'project_prefix' under 'global' block.")
+
+    if "is_enabled" not in global_config:
+        error_exit("MIssing 'is_required' flag under the global config block")
+
+    is_enabled = str(global_config["is_enabled"]).strip()
     
     region = str(global_config["region"]).strip()
     prefix = str(global_config["project_prefix"]).strip()
@@ -69,6 +75,7 @@ def main():
     tfvars = {
         "region": region,
         "prefix": prefix,
+        "is_enabled": is_enabled
     }
 
     # Extract optional global fields
