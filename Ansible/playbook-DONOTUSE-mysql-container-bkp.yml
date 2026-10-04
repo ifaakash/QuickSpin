@@ -42,7 +42,9 @@
       args:
         chdir: "{{ LOCAL_PATH  }}"
       ansible.builtin.shell: |
-        cat {{ LOCAL_PATH }}/{{ backup_filename  }} | grep -icn "INSERT INTO"
+        cat {{ LOCAL_PATH }}/{{ backup_filename  }} | grep -ic "INSERT INTO"
+      register: insert_count
+      failed_when: insert_count.stdout | int == 0
 
     - name: Sort the file based on latest - last three backup
       args:
