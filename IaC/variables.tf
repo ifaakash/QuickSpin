@@ -12,7 +12,7 @@ variable "prefix" {
 variable "availability_zone" {
   description = "Availabiliye zone in the region for placing the virtual machine"
   type        = string
-  default     = "us-east-1a"
+  default     = "us-east-1e"
 }
 
 ##################### ENABLE/DISABLE RESOURCES #####################
