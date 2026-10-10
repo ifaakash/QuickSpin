@@ -13,7 +13,7 @@ variable "prefix" {
 variable "is_enabled" {
   description = "Flag to enable/disable a resource generation via IaC"
   type        = bool
-  default     = true
+  default     = false
 }
 
 ##################### NETWORKING #####################
