@@ -74,8 +74,9 @@ module "ec2_stack" {
 
   ##################### INSTANCE #####################
 
-  ami_id        = coalesce(each.value.ami_id, data.aws_ami.ubuntu.id)
-  instance_type = each.value.instance_type
+  ami_id            = coalesce(each.value.ami_id, data.aws_ami.ubuntu.id)
+  availability_zone = var.availability_zone
+  instance_type     = each.value.instance_type
 
   network_interface_id  = module.eni[each.key].eni
   security_group_ids    = [module.networking.security_group_id]
