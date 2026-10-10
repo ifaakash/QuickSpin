@@ -1,4 +1,4 @@
-name: QuickSpin Deployment
+name: QuickSpin Infra Setup - Azure
 
 on:
   push:
