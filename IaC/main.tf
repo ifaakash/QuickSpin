@@ -31,6 +31,7 @@ data "aws_ami" "ubuntu" {
 module "networking" {
   source = "git::https://github.com/ifaakash/Terraform//Networking?ref=main"
   prefix = var.prefix
+  region = var.region
 
   ##################### NETWORKING #####################
 
@@ -75,7 +76,7 @@ module "ec2_stack" {
   ##################### INSTANCE #####################
 
   ami_id            = coalesce(each.value.ami_id, data.aws_ami.ubuntu.id)
-  availability_zone = var.availability_zone
+  # availability_zone = var.availability_zone
   instance_type     = each.value.instance_type
 
   network_interface_id  = module.eni[each.key].eni
