@@ -149,7 +149,7 @@ jobs:
         run: |
           terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
-          cat tfplan >> $GITHUB_STEP_SUMMARY
+          terraform show -no-color tfplan >> $GITHUB_STEP_SUMMARY
           #{
           #  echo 'plan<<EOF'
           #  cat tfplan
@@ -158,6 +158,7 @@ jobs:
 
       - name: Store the plan as an artifact
         uses: actions/upload-artifact@v4
+        working-directory: IaC
         with:
           name: tfplan-artifact
           path: tfplan
@@ -214,6 +215,7 @@ jobs:
 
       - name: Retrieve the plan
         uses: actions/download-artifact@v4
+        working-directory: IaC
         with:
           name: tfplan-artifact
 
