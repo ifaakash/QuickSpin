@@ -158,10 +158,9 @@ jobs:
 
       - name: Store the plan as an artifact
         uses: actions/upload-artifact@v4
-        working-directory: IaC
         with:
           name: tfplan-artifact
-          path: tfplan
+          path: IaC/tfplan
 
   terraform-apply:
     needs: [ terraform-plan, extract-config ]
@@ -215,7 +214,6 @@ jobs:
 
       - name: Retrieve the plan
         uses: actions/download-artifact@v4
-        working-directory: IaC
         with:
           name: tfplan-artifact
 
