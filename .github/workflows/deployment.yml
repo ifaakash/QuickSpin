@@ -272,10 +272,6 @@ jobs:
           ansible-inventory -i inventories/aws.aws_ec2.yml --graph
           ansible-playbook -i inventories/aws.aws_ec2.yml playbook-install-package.yml
 
-      - name: List out the current folders
-        run: |
-          echo "Repository structure" && ls
-
   destroy_infra:
     needs: [extract-config]
     if: github.event.inputs.destroy_infra == 'true'
