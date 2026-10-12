@@ -150,11 +150,17 @@ jobs:
           terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
           cat tfplan >> $GITHUB_STEP_SUMMARY
-          {
-            echo 'plan<<EOF'
-            cat tfplan
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
+          #{
+          #  echo 'plan<<EOF'
+          #  cat tfplan
+          #  echo EOF
+          #} >> "$GITHUB_OUTPUT"
+
+      - name: Store the plan as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: tfplan
 
   terraform-apply:
     needs: [ terraform-plan, extract-config ]
@@ -205,6 +211,11 @@ jobs:
               aws s3 mb "s3://$BUCKET_NAME" --region "$AWS_REGION"
             fi
           done
+
+      - name: Retrieve the plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-artifact
 
       - name: Terraform Apply - Infra Deployment
         working-directory: IaC
