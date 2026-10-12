@@ -149,6 +149,12 @@ jobs:
         run: |
           terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
           terraform plan -out=tfplan
+          cat tfplan >> $GITHUB_STEP_SUMMARY
+          {
+            echo 'plan<<EOF'
+            cat tfplan
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
 
   terraform-apply:
     needs: [ terraform-plan, extract-config ]
