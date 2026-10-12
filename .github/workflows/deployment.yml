@@ -206,7 +206,7 @@ jobs:
           terraform apply --auto-approve tfplan
 
   configuration-management:
-    needs: [extract-config, infra-deployment]
+    needs: [extract-config, terraform-apply]
     if: github.event.inputs.enable_ansible == 'true'
     runs-on: ubuntu-latest
     env:
