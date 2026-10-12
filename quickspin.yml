@@ -25,3 +25,8 @@ instances:
     # name: "my-custom-web-server" # Optional custom name
     packages:
       - nginx
+  - instance_type: "t3.micro"
+    is_public: false
+    # name: "my-custom-web-server" # Optional custom name
+    packages:
+      - nginx
