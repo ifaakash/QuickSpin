@@ -144,7 +144,7 @@ jobs:
             fi
           done
 
-      - name: Terraform Infra Deployment
+      - name: Terraform Plan
         working-directory: IaC
         run: |
           terraform init -backend-config="bucket=${{ env.STATE_BUCKET_NAME }}" -backend-config="key=terraform.tfstate"
@@ -200,7 +200,7 @@ jobs:
             fi
           done
 
-      - name: Terraform Infra Deployment
+      - name: Terraform Apply - Infra Deployment
         working-directory: IaC
         run: |
           terraform apply --auto-approve tfplan
