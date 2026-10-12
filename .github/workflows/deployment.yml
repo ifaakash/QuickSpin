@@ -19,7 +19,7 @@ on:
       run_apply:
         description: Run tf apply?
         type: boolean
-        default: true
+        default: false
         required: false
 
 permissions:
