@@ -1,4 +1,4 @@
-name: QuickSpin Infra Setup - CFN ( AWS )
+name: QuickSpin Infra Setup via CFN ( AWS )
 
 on:
 #  push:
