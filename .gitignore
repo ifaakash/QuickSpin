@@ -46,3 +46,4 @@ __pycache__/
 # The dashboard database is a MySQL server now, not a file in the repo. This
 # stays so a leftover file from before the migration is never committed back.
 api/devopshub.db*
+password*

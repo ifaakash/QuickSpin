@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  BucketSuffix:
+    Type: String
+    Description: Suffix for the bucket name
+
+Resources:
+  CFNTemplateBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName:  !Sub "cfn-lab-${AWS::AccountId}-${AWS::Region}-${BucketSuffix}"
+      Tags:
+        - Key: isTerraform
+          Value: false
+        - Key: isCFN
+          Value: true
+        - Key: isCD
+          Value: true
+Outputs:
+  DeployedRegion:
+    Value: !Ref AWS::Region
+  DeployedAccountID:
+    Value: !Ref AWS::AccountId
+  BucketName:
+    Value: !Ref CFNTemplateBucket
+    Description: "Bucket name created by CFN template"
+  BucketARN:
+    Value: !GetAtt CFNTemplateBucket.Arn
+    Description: "Bucket ARN"
