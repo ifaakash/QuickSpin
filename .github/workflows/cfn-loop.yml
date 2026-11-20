@@ -1,0 +1,84 @@
+name: QuickSpin Infra Setup via CFN - loop ( AWS )
+
+on:
+#  push:
+#    branches:
+#      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        options: [plan, deploy, delete]
+        default: plan
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  PROJECT_PREFIX: "quickspin"
+
+jobs:
+  extract-config:
+    runs-on: ubuntu-latest
+    outputs:
+      AWS_REGION: ${{ steps.extract.outputs.AWS_REGION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Extract Global Variables
+        id: extract
+        run: |
+          REGION=$(yq -r '.global.region' quickspin.yml)
+          PREFIX=$(yq -r '.global.project_prefix' quickspin.yml)
+          echo "AWS_REGION=$REGION" >> $GITHUB_OUTPUT
+  
+  cfn-deploy:
+    runs-on: ubuntu-latest
+    needs: [extract-config]
+    env:
+      AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Connect to Cloud Provider
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Plan (create change set only)
+        working-directory: cfn
+        if: inputs.action == 'plan'
+        run: |        
+          OUTPUT=$(
+          aws cloudformation deploy \
+            --template-file multi-s3.yaml \
+            --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
+            --capabilities CAPABILITY_AUTO_EXPAND \
+            --no-execute-changeset \
+            --region ${{ env.AWS_REGION }})
+
+          echo $OUTPUT
+          
+          DESCRIBE_CMD=$(echo $OUTPUT | grep -i "aws cloudformation" || true )
+
+          if [ -n $DESCRIBE_CMD" ]; then
+            echo "Running: $DESCRIBE_CMD"
+            eval "$DESCRIBE_CMD"
+          else
+            echo "No changeset created (stack is already up to date)."
+          fi
+
+      - name: Apply the changeset
+        working-directory: cfn
+        if: inputs.action == 'deploy'
+        run: |
+          aws cloudformation deploy \
+            --template-file s3.yaml \
+            --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
+            --capabilities CAPABILITY_AUTO_EXPAND \
+            --region ${{ env.AWS_REGION }}
