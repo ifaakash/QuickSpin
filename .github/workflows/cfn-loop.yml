@@ -57,7 +57,7 @@ jobs:
           OUTPUT=$(
           aws cloudformation deploy \
             --template-file multi-s3.yaml \
-            --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
+            --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-multi-s3 \
             --capabilities CAPABILITY_AUTO_EXPAND \
             --no-execute-changeset \
             --region ${{ env.AWS_REGION }})
