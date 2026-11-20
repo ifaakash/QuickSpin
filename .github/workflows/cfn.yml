@@ -64,7 +64,7 @@ jobs:
           
           DESCRIBE_CMD=$(echo "$OUTPUT" | grep -i "aws cloudformation" || true )
 
-          if [ -n $DESCRIBE_CMD" ]; then
+          if [ -n "$DESCRIBE_CMD" ]; then
             echo "Running: $DESCRIBE_CMD"
             eval "$DESCRIBE_CMD"
           else
@@ -78,4 +78,4 @@ jobs:
           aws cloudformation deploy \
             --template-file s3.yaml \
             --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
-            --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} )
+            --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }}
