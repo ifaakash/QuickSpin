@@ -54,17 +54,15 @@ jobs:
         working-directory: cfn
         if: inputs.action == 'plan'
         run: |
-          OUTPUT=$(
-          aws cloudformation deploy \
+          OUTPUT=$(aws cloudformation deploy \
             --template-file s3.yaml \
             --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
             --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} \
-            --no-execute-changeset \
-            --region ${{ env.AWS_REGION }})
+            --no-execute-changeset )
 
-          echo $OUTPUT
+          echo "$OUTPUT"
           
-          DESCRIBE_CMD=$(echo $OUTPUT | grep -i "aws cloudformation" || true )
+          DESCRIBE_CMD=$(echo "$OUTPUT" | grep -i "aws cloudformation" || true )
 
           if [ -n $DESCRIBE_CMD" ]; then
             echo "Running: $DESCRIBE_CMD"
@@ -80,5 +78,4 @@ jobs:
           aws cloudformation deploy \
             --template-file s3.yaml \
             --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
-            --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} \
-            --region ${{ env.AWS_REGION }}
+            --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} )
