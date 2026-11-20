@@ -12,21 +12,21 @@ Resources:
     - BucketPurpose
     - [ data, state ]
     - 'S3Bucket${BucketPurpose}':
-      Type: "AWS::S3::Bucket"
-      Properties:
-        BucketName:  !Sub "${BucketPrefix}-cfn-lab-${BucketPurpose}-${AWS::AccountId}-${AWS::Region}"
-        Tags:
-          - Key: isTerraform
-            Value: false
-          - Key: isCFN
-            Value: true
-          - Key: isCD
-            Value: true
+        Type: "AWS::S3::Bucket"
+        Properties:
+          BucketName:  !Sub "${BucketPrefix}-cfn-lab-${BucketPurpose}-${AWS::AccountId}-${AWS::Region}"
+          Tags:
+            - Key: isTerraform
+              Value: false
+            - Key: isCFN
+              Value: true
+            - Key: isCD
+              Value: true
 
 Outputs:
   'Fn::ForEach::BucketOutputs':
     - BucketPurpose
     - [data, state]
     - 'BucketName${BucketPurpose}':
-      Description: !Sub 'Name of the ${BucketPurpose} bucket'
-      Value: !Ref 'S3Bucket${BucketPurpose}'
+        Description: !Sub 'Name of the ${BucketPurpose} bucket'
+        Value: !Ref 'S3Bucket${BucketPurpose}'
