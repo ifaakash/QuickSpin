@@ -42,6 +42,7 @@ jobs:
   
   cfn-deploy:
     runs-on: ubuntu-latest
+    needs: [extract-config]
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
     steps:
