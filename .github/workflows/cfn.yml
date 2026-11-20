@@ -1,0 +1,65 @@
+name: QuickSpin Infra Setup - AWS
+
+on:
+#  push:
+#    branches:
+#      - main
+  workflow_dispatch:
+    inputs:
+      plan_cfn:
+        description: Dry run the CFN template?
+        type: boolean
+        default: true
+        required: true
+      apply_cfn:
+        description: Apply the CFN template?
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  BUCKET_SUFFIX: "ifaakash"
+  PROJECT_PREFIX: "quickspin"
+
+jobs:
+  cfn-deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
+      QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
+      BUCKET_NAMES: ${{ needs.extract-config.outputs.BUCKET_NAMES }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Connect to Cloud Provider
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Plan (create change set only)
+        working-directory: cfn
+        if: inputs.plan_cfn == 'true'
+        run: |
+          aws cloudformation deploy \
+            --template-file s3.yaml \
+            --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
+            --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} \
+            --no-execute-changeset \
+            --region us-east-1
+
+      - name: Apply the changeset
+        working_directory: cfn
+        if: inputs.apply_cfn == 'true'
+        run: |
+          aws cloudformation deploy \
+            --template-file s3.yaml \
+            --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
+            --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} \
+            --region us-east-1
+          
