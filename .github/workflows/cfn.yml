@@ -6,16 +6,11 @@ on:
 #      - main
   workflow_dispatch:
     inputs:
-      plan_cfn:
-        description: Dry run the CFN template?
-        type: boolean
-        default: true
-        required: true
-      apply_cfn:
-        description: Apply the CFN template?
-        type: boolean
-        default: false
-        required: true
+      action:
+        description: "What to do"
+        type: choice
+        options: [plan, deploy, delete]
+        default: plan
 
 permissions:
   id-token: write
@@ -57,7 +52,7 @@ jobs:
 
       - name: Plan (create change set only)
         working-directory: cfn
-        if: inputs.plan_cfn == 'true'
+        if: inputs.action == 'plan'
         run: |
           aws cloudformation deploy \
             --template-file s3.yaml \
@@ -68,7 +63,7 @@ jobs:
 
       - name: Apply the changeset
         working-directory: cfn
-        if: inputs.apply_cfn == 'true'
+        if: inputs.action == 'deploy'
         run: |
           aws cloudformation deploy \
             --template-file s3.yaml \
