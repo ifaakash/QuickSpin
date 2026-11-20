@@ -62,11 +62,11 @@ jobs:
             --no-execute-changeset \
             --region ${{ env.AWS_REGION }})
 
-          echo $OUTPUT
-          
-          DESCRIBE_CMD=$(echo $OUTPUT | grep -i "aws cloudformation" || true )
+          echo "$OUTPUT"
 
-          if [ -n $DESCRIBE_CMD" ]; then
+          DESCRIBE_CMD=$(echo "$OUTPUT" | grep -i "aws cloudformation" || true )
+
+          if [ -n "$DESCRIBE_CMD" ]; then
             echo "Running: $DESCRIBE_CMD"
             eval "$DESCRIBE_CMD"
           else
