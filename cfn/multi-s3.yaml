@@ -29,4 +29,5 @@ Outputs:
     - [data, state]
     - 'BucketName${BucketPurpose}':
         Description: !Sub 'Name of the ${BucketPurpose} bucket'
-        Value: !Ref 'S3Bucket${BucketPurpose}'
+        Value: !Ref
+          'Fn::Sub': 'S3Bucket${BucketPurpose}'
