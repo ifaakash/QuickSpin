@@ -62,4 +62,3 @@ jobs:
             --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
             --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} \
             --region us-east-1
-          
