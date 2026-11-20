@@ -22,16 +22,28 @@ permissions:
   contents: write
 
 env:
-  BUCKET_SUFFIX: "ifaakash"
   PROJECT_PREFIX: "quickspin"
 
 jobs:
+  extract-config:
+    runs-on: ubuntu-latest
+    outputs:
+      AWS_REGION: ${{ steps.extract.outputs.AWS_REGION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Extract Global Variables
+        id: extract
+        run: |
+          REGION=$(yq -r '.global.region' quickspin.yml)
+          PREFIX=$(yq -r '.global.project_prefix' quickspin.yml)
+          echo "AWS_REGION=$REGION" >> $GITHUB_OUTPUT
+  
   cfn-deploy:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ needs.extract-config.outputs.AWS_REGION }}
-      QUICKSPIN_PREFIX: ${{ needs.extract-config.outputs.QUICKSPIN_PREFIX }}
-      BUCKET_NAMES: ${{ needs.extract-config.outputs.BUCKET_NAMES }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -51,7 +63,7 @@ jobs:
             --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
             --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} \
             --no-execute-changeset \
-            --region us-east-1
+            --region ${{ env.AWS_REGION }}
 
       - name: Apply the changeset
         working-directory: cfn
@@ -61,4 +73,4 @@ jobs:
             --template-file s3.yaml \
             --stack-name ${{ env.PROJECT_PREFIX }}-cfn-lab-s3 \
             --parameter-overrides BucketSuffix=${{ env.PROJECT_PREFIX }} \
-            --region us-east-1
+            --region ${{ env.AWS_REGION }}
