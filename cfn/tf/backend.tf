@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket       = var.state_bucket
-    key          = "cdfnimport.tfstate"
+    key          = "cfnimport.tfstate"
     region       = var.region
     encrypt      = true
     use_lockfile = true
