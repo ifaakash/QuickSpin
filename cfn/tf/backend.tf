@@ -1,10 +1,9 @@
 terraform {
   backend "s3" {
-    bucket       = var.state_bucket
+    bucket       = "quickspin-cfn-lab-state-539772070671-us-east-1"
     key          = "cfnimport.tfstate"
-    region       = var.region
+    region       = "us-east-1"
     encrypt      = true
-    use_lockfile = true
   }
 }
 
